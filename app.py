@@ -11,14 +11,41 @@ st.set_page_config(layout="wide")
 TECHS = ["Dinidu", "Buddhika", "Kosala"]
 
 # ----------------------
-# LOAD DATA
+# SAFE DATA LOADING
 # ----------------------
 def load():
     data = get_all()
-    return pd.DataFrame(data)
+
+    columns = [
+        "id",
+        "name",
+        "date",
+        "start",
+        "end",
+        "hours",
+        "technician",
+        "assigned_by",
+        "color"
+    ]
+
+    if not data:
+        return pd.DataFrame(columns=columns)
+
+    df = pd.DataFrame(data)
+
+    for col in columns:
+        if col not in df.columns:
+            df[col] = ""
+
+    return df
 
 
 df = load()
+
+# Ensure correct types
+if not df.empty:
+    df["hours"] = pd.to_numeric(df["hours"], errors="coerce").fillna(0)
+    df["date"] = df["date"].astype(str)
 
 st.title("🛠 Technician Task Board (PRO VERSION)")
 
@@ -47,11 +74,21 @@ assigned_by = st.sidebar.text_input("Assigned By")
 
 if st.sidebar.button("Save Task"):
 
+    if not name:
+        st.sidebar.error("Task name required")
+        st.stop()
+
     start_s = start.strftime("%H:%M")
     end_dt = datetime.combine(datetime.today(), start) + timedelta(hours=hours)
     end_s = end_dt.time().strftime("%H:%M")
 
-    conflict, task = check_conflict(df.to_dict("records"), tech, str(d), start_s, end_s)
+    conflict, task = check_conflict(
+        df.to_dict("records"),
+        tech,
+        str(d),
+        start_s,
+        end_s
+    )
 
     if conflict:
         st.sidebar.error(f"❌ Conflict with: {task}")
@@ -62,17 +99,18 @@ if st.sidebar.button("Save Task"):
             str(d),
             start_s,
             end_s,
-            hours,
+            float(hours),
             tech,
             assigned_by,
             "#2D6FB0"
         ])
+
         st.sidebar.success("✅ Task added!")
         st.rerun()
 
 
 # ----------------------
-# WEEK VIEW (like your HTML grid)
+# WEEK VIEW
 # ----------------------
 def week_view():
     st.subheader("📊 Week Overview")
@@ -80,29 +118,37 @@ def week_view():
     today = date.today()
     week = [today + timedelta(days=i) for i in range(6)]
 
+    # Header
     cols = st.columns(7)
     cols[0].write("TECH")
 
     for i, d in enumerate(week):
-        cols[i+1].write(d.strftime("%a %d"))
+        cols[i + 1].write(d.strftime("%a %d"))
 
+    # Rows
     for t in TECHS:
+
         row = [t]
 
         for d in week:
-            day_tasks = df[(df["technician"] == t) & (df["date"] == str(d))]
 
-            load = day_tasks["hours"].sum() if not day_tasks.empty else 0
+            day_tasks = df[
+                (df["technician"] == t) &
+                (df["date"] == str(d))
+            ]
 
-            row.append(f"{load}h")
+            load_hours = day_tasks["hours"].sum() if not day_tasks.empty else 0
+
+            row.append(f"{load_hours}h")
 
         cols = st.columns(7)
+
         for i, cell in enumerate(row):
             cols[i].write(cell)
 
 
 # ----------------------
-# DAY VIEW (timeline style)
+# DAY VIEW
 # ----------------------
 def day_view():
     st.subheader("📅 Day Timeline")
@@ -131,7 +177,7 @@ def day_view():
 def catalog_view():
     st.subheader("📋 Task List")
 
-    st.dataframe(df)
+    st.dataframe(df, use_container_width=True)
 
 
 # ----------------------
