@@ -22,12 +22,12 @@ init_sheet()
 TECHS = ["Dinidu", "Buddhika", "Kosala"]
 
 # ----------------------
-# UI STYLE
+# UI STYLE (FIXED INPUT VISIBILITY)
 # ----------------------
 st.markdown("""
 <style>
 
-/* MAIN BACKGROUND */
+/* BACKGROUND */
 .main {
     background-color: #f6f8fb;
 }
@@ -38,7 +38,7 @@ st.markdown("""
     padding: 10px;
 }
 
-/* SIDEBAR SECTIONS */
+/* SIDEBAR SECTION */
 .sidebar-section {
     border: 1px solid #e6eaf0;
     border-radius: 12px;
@@ -55,6 +55,45 @@ st.markdown("""
     margin-bottom: 10px;
 }
 
+/* =========================
+   INPUT BOXES (FIXED VISIBILITY)
+   ========================= */
+
+input, textarea {
+    background-color: #ffffff !important;
+    color: #111 !important;
+    border: 1px solid #cfd8dc !important;
+    border-radius: 8px !important;
+    padding: 8px !important;
+}
+
+/* Streamlit inputs */
+.stTextInput > div > div > input,
+.stNumberInput > div > div > input,
+.stDateInput > div > div > input,
+.stTimeInput > div > div > input {
+    background-color: #ffffff !important;
+    color: #111 !important;
+    border: 1px solid #cfd8dc !important;
+    border-radius: 8px !important;
+    padding: 8px !important;
+    box-shadow: none !important;
+}
+
+/* Focus effect */
+input:focus {
+    border: 1px solid #2D9CDB !important;
+    box-shadow: 0px 0px 6px rgba(45,156,219,0.3) !important;
+    outline: none !important;
+}
+
+/* Selectbox */
+.stSelectbox > div {
+    border: 1px solid #cfd8dc !important;
+    border-radius: 8px !important;
+    background: white !important;
+}
+
 /* BUTTON */
 .stButton>button {
     background: linear-gradient(90deg, #1E7E8C, #2D9CDB);
@@ -63,12 +102,6 @@ st.markdown("""
     padding: 0.55rem 1rem;
     border: none;
     width: 100%;
-}
-
-/* INPUT FIELDS */
-input, textarea, .stSelectbox, .stDateInput, .stTimeInput {
-    background-color: white !important;
-    color: #111 !important;
 }
 
 /* TASK CARD */
@@ -81,7 +114,7 @@ input, textarea, .stSelectbox, .stDateInput, .stTimeInput {
     box-shadow: 0px 2px 6px rgba(0,0,0,0.05);
 }
 
-/* TABLE HEADER */
+/* HEADER BAR */
 .table-header {
     background: #1E7E8C;
     color: white;
@@ -112,7 +145,7 @@ def load():
 
 df = load()
 
-st.title("🛠 Technician Task Board")
+st.title("🛠 Technician Task Board (PRO VERSION)")
 
 # ----------------------
 # VIEW SWITCH
@@ -123,7 +156,7 @@ view = st.sidebar.radio(
 )
 
 # ----------------------
-# SIDEBAR INPUT (CLEAN SECTIONS)
+# SIDEBAR FORM (CLEAN + BORDERS)
 # ----------------------
 st.sidebar.markdown("## ➕ Task Entry")
 
@@ -146,7 +179,7 @@ with st.sidebar:
     st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
-    st.markdown('<div class="sidebar-title">Assignment</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sidebar-title">Assignment Info</div>', unsafe_allow_html=True)
     assigned_by = st.text_input("Assigned By")
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -174,7 +207,7 @@ def has_conflict(data, tech, date_str, start_s, end_s):
 if st.sidebar.button("Save Task"):
 
     if not techs_selected:
-        st.sidebar.error("❌ Select at least one technician")
+        st.sidebar.error("❌ Please select at least one technician")
         st.stop()
 
     start_s = start.strftime("%H:%M")
@@ -187,7 +220,7 @@ if st.sidebar.button("Save Task"):
         conflict, task = has_conflict(records, t, str(d), start_s, end_s)
 
         if conflict:
-            st.sidebar.error(f"❌ {t} is busy ({task})")
+            st.sidebar.error(f"❌ {t} is not available ({task})")
             st.stop()
 
     append_row([
@@ -202,7 +235,7 @@ if st.sidebar.button("Save Task"):
         "#1E7E8C"
     ])
 
-    st.sidebar.success("✅ Task Assigned")
+    st.sidebar.success("✅ Task Assigned Successfully")
     st.rerun()
 
 # ----------------------
@@ -232,7 +265,7 @@ def day_view():
     day_tasks = df[df["date"] == str(selected)]
 
     if day_tasks.empty:
-        st.info("No tasks today")
+        st.info("No tasks for this day")
         return
 
     for _, t in day_tasks.iterrows():
