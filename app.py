@@ -6,13 +6,10 @@ import uuid
 from sheets import get_all, append_row, init_sheet
 
 # ----------------------
-# PAGE CONFIG
+# CONFIG
 # ----------------------
 st.set_page_config(page_title="Technician Task Board", layout="wide")
 
-# ----------------------
-# INIT SHEET (auto headers)
-# ----------------------
 init_sheet()
 
 TECHS = ["Dinidu", "Buddhika", "Kosala"]
@@ -41,7 +38,7 @@ df = load()
 st.title("🛠 Technician Task Board (PRO VERSION)")
 
 # ----------------------
-# VIEW SWITCH
+# VIEW
 # ----------------------
 view = st.sidebar.radio(
     "View Mode",
@@ -49,7 +46,7 @@ view = st.sidebar.radio(
 )
 
 # ----------------------
-# MULTI TECH SELECT
+# FORM
 # ----------------------
 st.sidebar.header("➕ Assign Task")
 
@@ -60,19 +57,25 @@ start = st.sidebar.time_input("Start Time")
 hours = st.sidebar.number_input("Hours", 0.5, 12.0, step=0.5)
 assigned_by = st.sidebar.text_input("Assigned By")
 
-
 # ----------------------
-# CONFLICT CHECK (MULTI TECH SAFE)
+# SAFE CONFLICT CHECK (FIXED)
 # ----------------------
 def has_conflict(df, tech, date_str, start_s, end_s):
+
     for _, r in df.iterrows():
+
+        # skip empty rows
+        if pd.isna(r["date"]) or pd.isna(r["technician"]):
+            continue
+
         if str(r["date"]) != date_str:
             continue
 
-        tech_list = str(r["technician"]).split(",")
+        # IMPORTANT FIX HERE
+        tech_list = [t.strip() for t in str(r["technician"]).split(",")]
 
-        if tech in [t.strip() for t in tech_list]:
-            if r["start"] < end_s and start_s < r["end"]:
+        if tech in tech_list:
+            if str(r["start"]) < end_s and start_s < str(r["end"]):
                 return True, r["name"]
 
     return False, None
@@ -84,7 +87,7 @@ def has_conflict(df, tech, date_str, start_s, end_s):
 if st.sidebar.button("Save Task"):
 
     if not techs_selected:
-        st.sidebar.error("❌ Please select at least one technician")
+        st.sidebar.error("Select at least one technician")
         st.stop()
 
     start_s = start.strftime("%H:%M")
@@ -93,12 +96,12 @@ if st.sidebar.button("Save Task"):
 
     records = df.to_dict("records")
 
-    # check conflict for ALL selected technicians
+    # CHECK ALL TECHS
     for t in techs_selected:
         conflict, task = has_conflict(records, t, str(d), start_s, end_s)
 
         if conflict:
-            st.sidebar.error(f"❌ {t} is not available (conflict with {task})")
+            st.sidebar.error(f"❌ {t} is busy (conflict with '{task}')")
             st.stop()
 
     append_row([
@@ -113,13 +116,13 @@ if st.sidebar.button("Save Task"):
         "#1E7E8C"
     ])
 
-    st.sidebar.success("✅ Task added!")
+    st.sidebar.success("Task added successfully!")
     st.rerun()
 
 
-# ======================================================
-# WEEK VIEW (TABLE FORMAT - NO EMPTY CELLS)
-# ======================================================
+# ----------------------
+# WEEK VIEW
+# ----------------------
 def week_view():
     st.subheader("📊 Week Overview")
 
@@ -129,9 +132,7 @@ def week_view():
     rows = []
 
     for d in week:
-        day_str = str(d)
-
-        day_tasks = df[df["date"] == day_str]
+        day_tasks = df[df["date"] == str(d)]
 
         for _, t in day_tasks.iterrows():
             rows.append({
@@ -142,15 +143,12 @@ def week_view():
                 "Hours": t["hours"]
             })
 
-    if rows:
-        st.dataframe(pd.DataFrame(rows), use_container_width=True)
-    else:
-        st.info("No tasks this week")
+    st.dataframe(pd.DataFrame(rows) if rows else pd.DataFrame(), use_container_width=True)
 
 
-# ======================================================
-# DAY VIEW (TABLE FORMAT)
-# ======================================================
+# ----------------------
+# DAY VIEW
+# ----------------------
 def day_view():
     st.subheader("📅 Day View")
 
@@ -169,28 +167,23 @@ def day_view():
             "Assigned By": t["assigned_by"]
         })
 
-    if rows:
-        st.dataframe(pd.DataFrame(rows), use_container_width=True)
-    else:
-        st.info("No tasks for selected day")
+    st.dataframe(pd.DataFrame(rows) if rows else pd.DataFrame(), use_container_width=True)
 
 
-# ======================================================
-# CATALOG VIEW
-# ======================================================
+# ----------------------
+# CATALOG
+# ----------------------
 def catalog_view():
     st.subheader("📋 Task Catalog")
     st.dataframe(df, use_container_width=True)
 
 
-# ======================================================
+# ----------------------
 # ROUTER
-# ======================================================
+# ----------------------
 if view == "📊 Week View":
     week_view()
-
 elif view == "📅 Day View":
     day_view()
-
-elif view == "📋 Task Catalog":
+else:
     catalog_view()
