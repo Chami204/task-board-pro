@@ -81,7 +81,15 @@ if st.sidebar.button("Save Task"):
     end_dt = datetime.combine(date.today(), start) + timedelta(hours=hours)
     end_s = end_dt.strftime("%H:%M")
 
-    conflict, task = has_conflict(df, tech, str(d), start_s, end_s)
+    records = df.to_dict("records")
+
+    conflict, task = check_conflict(
+        records,
+        tech,
+        str(d),
+        start_s,
+        end_s
+    )
 
     if conflict:
         st.sidebar.error(f"❌ Conflict with: {task}")
