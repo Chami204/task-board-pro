@@ -4,7 +4,7 @@ from datetime import datetime, date, timedelta
 import uuid
 
 from streamlit_calendar import calendar
-from sheets import get_all, append_row, init_sheet
+from sheets import get_all, append_row, update_row, init_sheet
 
 # ----------------------
 # CONFIG
@@ -16,35 +16,32 @@ init_sheet()
 TECHS = ["Dinidu", "Buddhika", "Kosala"]
 
 # ----------------------
-# VIEW MODE (IMPORTANT FIX)
+# VIEW MODE
 # ----------------------
 view_mode = st.radio(
-    "📱 Select View Mode",
+    "View Mode",
     ["📱 Mobile View", "💻 Desktop View"],
     horizontal=True
 )
 
 # ----------------------
-# STYLE
+# CLEAN UI (NO COLOR CHANGE)
 # ----------------------
 st.markdown("""
 <style>
 .task-card {
     background: #ffffff;
     border: 1px solid #e6e6e6;
-    padding: 12px;
-    border-radius: 12px;
-    margin-bottom: 10px;
-    box-shadow: 0px 2px 6px rgba(0,0,0,0.05);
+    padding: 10px;
+    border-radius: 10px;
+    margin-bottom: 8px;
 }
 
-.small-text {
-    font-size: 13px;
-    color: #555;
-}
-
-section[data-testid="stSidebar"] {
-    background: #f7f9fc;
+/* Mobile text only smaller */
+@media (max-width: 768px) {
+    html, body, [class*="css"] {
+        font-size: 13px !important;
+    }
 }
 </style>
 """, unsafe_allow_html=True)
@@ -55,11 +52,7 @@ section[data-testid="stSidebar"] {
 def load():
     df = pd.DataFrame(get_all())
 
-    cols = [
-        "id", "name", "date", "start", "end",
-        "hours", "technician", "assigned_by", "color"
-    ]
-
+    cols = ["id","name","date","start","end","hours","technician","assigned_by","color"]
     for c in cols:
         if c not in df.columns:
             df[c] = ""
@@ -69,23 +62,21 @@ def load():
 df = load()
 
 # ----------------------
-# FIX: SAFE DATETIME CHECK (CRITICAL)
+# CONFLICT CHECK
 # ----------------------
-def has_conflict(df, tech, date_str, start_s, end_s):
+def has_conflict(df, tech, date_str, start_s, end_s, ignore_id=None):
     for _, r in df.iterrows():
 
         if str(r["technician"]) != tech:
             continue
-
         if str(r["date"]) != date_str:
             continue
 
-        # ensure safe compare
-        try:
-            existing_start = str(r["start"])
-            existing_end = str(r["end"])
+        if ignore_id and str(r["id"]) == str(ignore_id):
+            continue
 
-            if existing_start < end_s and start_s < existing_end:
+        try:
+            if str(r["start"]) < end_s and start_s < str(r["end"]):
                 return True, r["name"]
         except:
             continue
@@ -94,7 +85,36 @@ def has_conflict(df, tech, date_str, start_s, end_s):
 
 
 # ----------------------
-# SAVE TASK (MULTI TECH FIX)
+# UPDATE TASK (DRAG & DROP)
+# ----------------------
+def update_task(task_id, new_start_dt, new_end_dt):
+
+    for _, r in df.iterrows():
+        if str(r["id"]) == str(task_id):
+
+            tech = r["technician"]
+            date_str = new_start_dt.date().strftime("%Y-%m-%d")
+            start_s = new_start_dt.strftime("%H:%M")
+            end_s = new_end_dt.strftime("%H:%M")
+
+            conflict, task = has_conflict(df, tech, date_str, start_s, end_s, task_id)
+
+            if conflict:
+                return False, task
+
+            update_row(task_id, {
+                "date": date_str,
+                "start": start_s,
+                "end": end_s
+            })
+
+            return True, None
+
+    return False, "Task not found"
+
+
+# ----------------------
+# SAVE TASK
 # ----------------------
 def save_task(name, tech, d, start, hours, assigned_by):
 
@@ -136,10 +156,6 @@ assigned_by = st.sidebar.text_input("Assigned By")
 
 if st.sidebar.button("Save Task"):
 
-    if not name or not techs_selected:
-        st.sidebar.error("Fill Task Name + Select Technicians")
-        st.stop()
-
     errors = []
 
     for t in techs_selected:
@@ -148,14 +164,14 @@ if st.sidebar.button("Save Task"):
             errors.append(f"{t} busy with {conflict}")
 
     if errors:
-        st.sidebar.error("❌ " + " | ".join(errors))
+        st.sidebar.error(" ❌ " + " | ".join(errors))
     else:
-        st.sidebar.success("✅ Task assigned successfully")
+        st.sidebar.success("Task added")
         st.rerun()
 
 
 # ----------------------
-# BUILD CALENDAR EVENTS
+# CALENDAR EVENTS
 # ----------------------
 def build_events(df):
     events = []
@@ -166,7 +182,8 @@ def build_events(df):
             end_dt = datetime.strptime(f"{r['date']} {r['end']}", "%Y-%m-%d %H:%M")
 
             events.append({
-                "title": f"{r['name']} - {r['technician']}",
+                "id": r["id"],
+                "title": f"{r['name']} ({r['technician']})",
                 "start": start_dt.isoformat(),
                 "end": end_dt.isoformat(),
                 "color": r.get("color", "#1E7E8C")
@@ -180,10 +197,10 @@ def build_events(df):
 events = build_events(df)
 
 # ----------------------
-# CALENDAR OPTIONS
+# CALENDAR OPTIONS (DRAG ENABLED)
 # ----------------------
 calendar_options = {
-    "editable": False,   # safe mode (prevents sync bugs)
+    "editable": True,
     "selectable": True,
     "initialView": "timeGridWeek",
     "headerToolbar": {
@@ -194,56 +211,38 @@ calendar_options = {
 }
 
 # ----------------------
-# MOBILE VIEW
+# HANDLE DRAG & DROP
 # ----------------------
+calendar_result = calendar(
+    events=events,
+    options=calendar_options,
+    key="scheduler"
+)
+
+if calendar_result and "eventDrop" in calendar_result:
+
+    event = calendar_result["eventDrop"]["event"]
+
+    task_id = event["id"]
+    new_start = datetime.fromisoformat(event["start"])
+    new_end = datetime.fromisoformat(event["end"])
+
+    ok, msg = update_task(task_id, new_start, new_end)
+
+    if ok:
+        st.success("Updated successfully")
+        st.rerun()
+    else:
+        st.error(f"❌ {msg}")
+
+
+# ----------------------
+# UI
+# ----------------------
+st.title("🛠 Technician Scheduler")
+
 if view_mode == "📱 Mobile View":
+    calendar(events=events, options=calendar_options, key="mobile")
 
-    st.title("📱 Mobile Task View")
-
-    calendar(
-        events=events,
-        options=calendar_options,
-        key="mobile_calendar"
-    )
-
-    st.subheader("📋 Tasks")
-
-    for _, r in df.iterrows():
-        st.markdown(f"""
-        <div class="task-card">
-            <b>{r['name']}</b><br>
-            👨‍🔧 {r['technician']}<br>
-            🕒 {r['start']} → {r['end']}<br>
-            📅 {r['date']}
-        </div>
-        """, unsafe_allow_html=True)
-
-
-# ----------------------
-# DESKTOP VIEW
-# ----------------------
 else:
-
-    st.title("💻 Desktop Scheduler")
-
-    col1, col2 = st.columns([2, 1])
-
-    with col1:
-        calendar(
-            events=events,
-            options=calendar_options,
-            key="desktop_calendar"
-        )
-
-    with col2:
-        st.subheader("📋 Task List")
-
-        for _, r in df.iterrows():
-            st.markdown(f"""
-            <div class="task-card">
-                <b>{r['name']}</b><br>
-                👨‍🔧 {r['technician']}<br>
-                🕒 {r['start']} → {r['end']}<br>
-                📅 {r['date']}
-            </div>
-            """, unsafe_allow_html=True)
+    calendar(events=events, options=calendar_options, key="desktop")
