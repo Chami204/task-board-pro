@@ -1,31 +1,39 @@
-def time_overlap(a_start, a_end, b_start, b_end):
-    return not (a_end <= b_start or a_start >= b_end)
+from datetime import datetime
+
+def to_minutes(t):
+    """Convert 'HH:MM' → minutes"""
+    h, m = map(int, t.split(":"))
+    return h * 60 + m
 
 
-def check_conflict(tasks, tech, date, start, end):
+def check_conflict(records, technician, date, new_start, new_end):
+    """
+    Returns:
+    (True, conflicting_task_name) if conflict exists
+    """
 
-    for t in tasks:
-        if t.get("technician") != tech:
+    new_start_m = to_minutes(new_start)
+    new_end_m = to_minutes(new_end)
+
+    for r in records:
+        if r["technician"] != technician:
+            continue
+        if str(r["date"]) != str(date):
             continue
 
-        if t.get("date") != date:
-            continue
+        existing_start = to_minutes(r["start"])
+        existing_end = to_minutes(r["end"])
 
-        if time_overlap(start, end, t.get("start"), t.get("end")):
-            return True, t.get("name")
+        # 🔴 OVERLAP RULE (MOST IMPORTANT PART)
+        if new_start_m < existing_end and new_end_m > existing_start:
+            return True, r["name"]
 
     return False, None
 
 
-def daily_load(tasks, tech, date):
+def daily_load(records, technician, date):
     total = 0
-
-    for t in tasks:
-        if t.get("technician") == tech and t.get("date") == date:
-            try:
-                total += float(t.get("hours", 0))
-            except:
-                pass
-
+    for r in records:
+        if r["technician"] == technician and str(r["date"]) == str(date):
+            total += float(r["hours"])
     return total
-    
