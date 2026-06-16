@@ -2,12 +2,17 @@ import gspread
 import streamlit as st
 from oauth2client.service_account import ServiceAccountCredentials
 
+# -----------------------
+# GOOGLE SHEETS SCOPE
+# -----------------------
 scope = [
     "https://spreadsheets.google.com/feeds",
     "https://www.googleapis.com/auth/drive"
 ]
 
-# 🔐 Load credentials ONLY from Streamlit secrets
+# -----------------------
+# LOAD CREDENTIALS FROM STREAMLIT SECRETS
+# -----------------------
 creds_dict = st.secrets["gcp_service_account"]
 
 creds = ServiceAccountCredentials.from_json_keyfile_dict(
@@ -17,17 +22,24 @@ creds = ServiceAccountCredentials.from_json_keyfile_dict(
 
 client = gspread.authorize(creds)
 
-# ✅ IMPORTANT: use your sheet ID (NOT name)
-SHEET_ID = "YOUR_SHEET_ID"
+# -----------------------
+# YOUR CORRECT SHEET ID
+# -----------------------
+SHEET_ID = "1P1f1rW4l1a_hRUGZMJdhkpm7PKenbBFKvV6p5rRjXPs"
 
-sheet = client.open_by_key(1P1f1rW4l1a_hRUGZMJdhkpm7PKenbBFKvV6p5rRjXPs).sheet1
+# -----------------------
+# OPEN SHEET SAFELY
+# -----------------------
+sheet = client.open_by_key(SHEET_ID).sheet1
 
 
 # -----------------------
-# INIT HEADERS AUTOMATICALLY
+# INITIALIZE HEADERS (AUTO FIX)
 # -----------------------
 def init_sheet():
-    if sheet.row_count == 0 or sheet.get_all_values() == []:
+    values = sheet.get_all_values()
+
+    if len(values) == 0:
         sheet.append_row([
             "id",
             "name",
@@ -42,14 +54,14 @@ def init_sheet():
 
 
 # -----------------------
-# READ
+# READ ALL DATA
 # -----------------------
 def get_all():
     return sheet.get_all_records()
 
 
 # -----------------------
-# WRITE
+# APPEND NEW ROW
 # -----------------------
 def append_row(row):
     sheet.append_row(row)
