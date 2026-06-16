@@ -13,6 +13,11 @@ creds_dict = st.secrets["gcp_service_account"]
 creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
 
 client = gspread.authorize(creds)
+files = client.list_spreadsheet_files()
+
+print("=== FILES VISIBLE TO SERVICE ACCOUNT ===")
+for f in files:
+    print(f["name"], f["id"])
 
 sheet = client.open("TaskBoard").sheet1
 
