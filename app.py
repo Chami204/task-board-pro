@@ -112,7 +112,7 @@ def load():
 
 df = load()
 
-st.title("🛠 Technician Task Board (PRO VERSION)")
+st.title("🛠 Technician Task Board")
 
 # ----------------------
 # VIEW SWITCH
