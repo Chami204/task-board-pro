@@ -9,10 +9,7 @@ scope = [
 
 creds_dict = st.secrets["gcp_service_account"]
 
-creds = ServiceAccountCredentials.from_json_keyfile_dict(
-    creds_dict,
-    scope
-)
+creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
 
 client = gspread.authorize(creds)
 
@@ -21,26 +18,32 @@ sheet = client.open_by_key(
 ).sheet1
 
 
-# Create headers automatically if sheet is empty
+# ----------------------------
+# AUTO CREATE HEADERS
+# ----------------------------
 HEADERS = [
-    "id",
-    "name",
-    "date",
-    "start",
-    "end",
-    "hours",
-    "technician",
-    "assigned_by",
-    "color"
+    "id", "name", "date", "start", "end",
+    "hours", "technician", "assigned_by", "color"
 ]
 
-if len(sheet.get_all_values()) == 0:
+values = sheet.get_all_values()
+
+if len(values) == 0:
+    sheet.append_row(HEADERS)
+elif values[0] != HEADERS:
+    sheet.clear()
     sheet.append_row(HEADERS)
 
 
+# ----------------------------
+# GET ALL DATA
+# ----------------------------
 def get_all():
     return sheet.get_all_records()
 
 
+# ----------------------------
+# APPEND ROW
+# ----------------------------
 def append(row):
     sheet.append_row(row)
