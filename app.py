@@ -4,32 +4,31 @@ from datetime import datetime, date, timedelta
 import uuid
 
 from sheets import get_all, append_row, init_sheet
+from logic import check_conflict
 
 # ----------------------
-# PAGE CONFIG
+# PAGE
 # ----------------------
 st.set_page_config(page_title="Technician Task Board", layout="wide")
 
-# ----------------------
-# INIT SHEET
-# ----------------------
 init_sheet()
 
 TECHS = ["Dinidu", "Buddhika", "Kosala"]
 
+
 # ----------------------
-# LOAD DATA SAFELY
+# LOAD DATA SAFE
 # ----------------------
 def load():
     data = get_all()
     df = pd.DataFrame(data)
 
-    expected_cols = [
+    expected = [
         "id", "name", "date", "start", "end",
-        "hours", "technician", "assigned_by", "color"
+        "hours", "technicians", "assigned_by", "color"
     ]
 
-    for c in expected_cols:
+    for c in expected:
         if c not in df.columns:
             df[c] = ""
 
@@ -38,51 +37,26 @@ def load():
 
 df = load()
 
-st.title("🛠 Technician Task Board (PRO VERSION)")
+st.title("🛠 Technician Task Board")
+
 
 # ----------------------
-# VIEW SWITCH
+# VIEW
 # ----------------------
-view = st.sidebar.radio(
-    "View Mode",
-    ["📊 Week View", "📅 Day View", "📋 Task Catalog"]
-)
+view = st.sidebar.radio("View", ["Week View", "Day View", "Catalog"])
+
 
 # ----------------------
-# FORM
+# INPUT
 # ----------------------
 st.sidebar.header("➕ Assign Task")
 
 name = st.sidebar.text_input("Task Name")
-techs_selected = st.sidebar.multiselect("Technicians", TECHS)
+techs = st.sidebar.multiselect("Technicians", TECHS)
 d = st.sidebar.date_input("Date", date.today())
-start = st.sidebar.time_input("Start Time")
+start = st.sidebar.time_input("Start")
 hours = st.sidebar.number_input("Hours", 0.5, 12.0, step=0.5)
 assigned_by = st.sidebar.text_input("Assigned By")
-
-# ----------------------
-# CONFLICT CHECK (FIXED)
-# ----------------------
-def has_conflict(df, tech, date_str, start_s, end_s):
-
-    # safety fix (prevents iterrows crash)
-    if df is None or len(df) == 0:
-        return False, None
-
-    for _, r in df.iterrows():
-
-        if str(r.get("date", "")) != date_str:
-            continue
-
-        tech_list = str(r.get("technician", "")).split(",")
-
-        tech_list = [t.strip() for t in tech_list if t.strip()]
-
-        if tech in tech_list:
-            if str(r.get("start", "")) < end_s and start_s < str(r.get("end", "")):
-                return True, r.get("name", "Unknown Task")
-
-    return False, None
 
 
 # ----------------------
@@ -90,64 +64,70 @@ def has_conflict(df, tech, date_str, start_s, end_s):
 # ----------------------
 if st.sidebar.button("Save Task"):
 
-    if not techs_selected:
-        st.sidebar.error("❌ Please select at least one technician")
-        st.stop()
+    if not name or not techs:
+        st.sidebar.error("Enter task + select technicians")
+    else:
+        start_s = start.strftime("%H:%M")
 
-    start_s = start.strftime("%H:%M")
-    end_dt = datetime.combine(date.today(), start) + timedelta(hours=hours)
-    end_s = end_dt.strftime("%H:%M")
+        end_dt = datetime.combine(d, start) + timedelta(hours=hours)
+        end_s = end_dt.strftime("%H:%M")
 
-    # 🔥 IMPORTANT FIX: PASS DATAFRAME (NOT dict list)
-    records = df
-
-    # check all selected technicians
-    for t in techs_selected:
-        conflict, task = has_conflict(records, t, str(d), start_s, end_s)
+        conflict, task = check_conflict(
+            df.to_dict("records"),
+            techs,
+            str(d),
+            start_s,
+            end_s
+        )
 
         if conflict:
-            st.sidebar.error(f"❌ {t} is not available (conflict with '{task}')")
-            st.stop()
+            st.sidebar.error(f"❌ Technician not available (clash with {task})")
+        else:
+            append_row([
+                str(uuid.uuid4()),
+                name,
+                str(d),
+                start_s,
+                end_s,
+                float(hours),
+                ",".join(techs),
+                assigned_by,
+                "#2D6FB0"
+            ])
 
-    append_row([
-        str(uuid.uuid4()),
-        name,
-        str(d),
-        start_s,
-        end_s,
-        float(hours),
-        ",".join(techs_selected),
-        assigned_by,
-        "#1E7E8C"
-    ])
+            st.sidebar.success("✅ Task added!")
+            st.rerun()
 
-    st.sidebar.success("✅ Task added successfully!")
-    st.rerun()
 
 # ----------------------
 # WEEK VIEW
 # ----------------------
 def week_view():
-    st.subheader("📊 Week Overview")
+    st.subheader("📊 Week View")
 
     today = date.today()
-    week = [today + timedelta(days=i) for i in range(7)]
+    week = [today + timedelta(days=i) for i in range(6)]
 
-    rows = []
+    table = []
 
-    for d in week:
-        day_tasks = df[df["date"] == str(d)]
+    for tech in TECHS:
+        row = [tech]
 
-        for _, t in day_tasks.iterrows():
-            rows.append({
-                "Date": d.strftime("%a %d"),
-                "Task": t["name"],
-                "Time": f"{t['start']} → {t['end']}",
-                "Technicians": t["technician"],
-                "Hours": t["hours"]
-            })
+        for d in week:
+            day_tasks = df[
+                (df["technicians"].astype(str).str.contains(tech)) &
+                (df["date"] == str(d))
+            ]
 
-    st.dataframe(pd.DataFrame(rows) if rows else pd.DataFrame(), use_container_width=True)
+            load = day_tasks["hours"].sum() if not day_tasks.empty else 0
+            row.append(f"{load}h")
+
+        table.append(row)
+
+    st.dataframe(
+        pd.DataFrame(table, columns=["Tech"] + [str(d) for d in week]),
+        use_container_width=True
+    )
 
 
 # ----------------------
@@ -156,28 +136,26 @@ def week_view():
 def day_view():
     st.subheader("📅 Day View")
 
-    selected = st.date_input("Select Day", date.today())
+    selected = st.date_input("Select Date", date.today())
 
-    day_tasks = df[df["date"] == str(selected)]
+    day = df[df["date"] == str(selected)]
 
-    rows = []
+    for tech in TECHS:
+        st.markdown(f"### {tech}")
 
-    for _, t in day_tasks.iterrows():
-        rows.append({
-            "Task": t["name"],
-            "Time": f"{t['start']} → {t['end']}",
-            "Technicians": t["technician"],
-            "Hours": t["hours"],
-            "Assigned By": t["assigned_by"]
-        })
+        tasks = day[day["technicians"].astype(str).str.contains(tech)]
 
-    st.dataframe(pd.DataFrame(rows) if rows else pd.DataFrame(), use_container_width=True)
+        if tasks.empty:
+            st.info("No tasks")
+        else:
+            for _, t in tasks.iterrows():
+                st.write(f"🟦 {t['name']} | {t['start']} - {t['end']} | {t['hours']}h")
 
 
 # ----------------------
-# CATALOG VIEW
+# CATALOG
 # ----------------------
-def catalog_view():
+def catalog():
     st.subheader("📋 Task Catalog")
     st.dataframe(df, use_container_width=True)
 
@@ -185,9 +163,9 @@ def catalog_view():
 # ----------------------
 # ROUTER
 # ----------------------
-if view == "📊 Week View":
+if view == "Week View":
     week_view()
-elif view == "📅 Day View":
+elif view == "Day View":
     day_view()
 else:
-    catalog_view()
+    catalog()
