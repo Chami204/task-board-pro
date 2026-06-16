@@ -6,10 +6,13 @@ import uuid
 from sheets import get_all, append_row, init_sheet
 
 # ----------------------
-# CONFIG
+# PAGE CONFIG
 # ----------------------
 st.set_page_config(page_title="Technician Task Board", layout="wide")
 
+# ----------------------
+# INIT SHEET
+# ----------------------
 init_sheet()
 
 TECHS = ["Dinidu", "Buddhika", "Kosala"]
@@ -38,7 +41,7 @@ df = load()
 st.title("🛠 Technician Task Board (PRO VERSION)")
 
 # ----------------------
-# VIEW
+# VIEW SWITCH
 # ----------------------
 view = st.sidebar.radio(
     "View Mode",
@@ -58,25 +61,26 @@ hours = st.sidebar.number_input("Hours", 0.5, 12.0, step=0.5)
 assigned_by = st.sidebar.text_input("Assigned By")
 
 # ----------------------
-# SAFE CONFLICT CHECK (FIXED)
+# CONFLICT CHECK (FIXED)
 # ----------------------
 def has_conflict(df, tech, date_str, start_s, end_s):
 
+    # safety fix (prevents iterrows crash)
+    if df is None or len(df) == 0:
+        return False, None
+
     for _, r in df.iterrows():
 
-        # skip empty rows
-        if pd.isna(r["date"]) or pd.isna(r["technician"]):
+        if str(r.get("date", "")) != date_str:
             continue
 
-        if str(r["date"]) != date_str:
-            continue
+        tech_list = str(r.get("technician", "")).split(",")
 
-        # IMPORTANT FIX HERE
-        tech_list = [t.strip() for t in str(r["technician"]).split(",")]
+        tech_list = [t.strip() for t in tech_list if t.strip()]
 
         if tech in tech_list:
-            if str(r["start"]) < end_s and start_s < str(r["end"]):
-                return True, r["name"]
+            if str(r.get("start", "")) < end_s and start_s < str(r.get("end", "")):
+                return True, r.get("name", "Unknown Task")
 
     return False, None
 
@@ -87,21 +91,22 @@ def has_conflict(df, tech, date_str, start_s, end_s):
 if st.sidebar.button("Save Task"):
 
     if not techs_selected:
-        st.sidebar.error("Select at least one technician")
+        st.sidebar.error("❌ Please select at least one technician")
         st.stop()
 
     start_s = start.strftime("%H:%M")
     end_dt = datetime.combine(date.today(), start) + timedelta(hours=hours)
     end_s = end_dt.strftime("%H:%M")
 
-    records = df.to_dict("records")
+    # 🔥 IMPORTANT FIX: PASS DATAFRAME (NOT dict list)
+    records = df
 
-    # CHECK ALL TECHS
+    # check all selected technicians
     for t in techs_selected:
         conflict, task = has_conflict(records, t, str(d), start_s, end_s)
 
         if conflict:
-            st.sidebar.error(f"❌ {t} is busy (conflict with '{task}')")
+            st.sidebar.error(f"❌ {t} is not available (conflict with '{task}')")
             st.stop()
 
     append_row([
@@ -116,9 +121,8 @@ if st.sidebar.button("Save Task"):
         "#1E7E8C"
     ])
 
-    st.sidebar.success("Task added successfully!")
+    st.sidebar.success("✅ Task added successfully!")
     st.rerun()
-
 
 # ----------------------
 # WEEK VIEW
@@ -171,7 +175,7 @@ def day_view():
 
 
 # ----------------------
-# CATALOG
+# CATALOG VIEW
 # ----------------------
 def catalog_view():
     st.subheader("📋 Task Catalog")
