@@ -6,7 +6,7 @@ import uuid
 from sheets import get_all, append_row, init_sheet
 
 # ----------------------
-# PAGE CONFIG (mobile friendly)
+# PAGE CONFIG
 # ----------------------
 st.set_page_config(
     page_title="Technician Task Board",
@@ -22,63 +22,81 @@ init_sheet()
 TECHS = ["Dinidu", "Buddhika", "Kosala"]
 
 # ----------------------
-# UI STYLING (LIGHT + COLORFUL)
+# UI STYLE
 # ----------------------
 st.markdown("""
 <style>
-/* Background */
+
+/* MAIN BACKGROUND */
 .main {
     background-color: #f6f8fb;
 }
 
-/* Sidebar */
+/* SIDEBAR */
 [data-testid="stSidebar"] {
     background: #ffffff;
+    padding: 10px;
 }
 
-/* Sidebar text */
-.css-1d391kg, .css-1v0mbdj {
-    color: #111 !important;
+/* SIDEBAR SECTIONS */
+.sidebar-section {
+    border: 1px solid #e6eaf0;
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 14px;
+    background: #fafbfc;
 }
 
-/* Buttons */
+/* SECTION TITLE */
+.sidebar-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1E7E8C;
+    margin-bottom: 10px;
+}
+
+/* BUTTON */
 .stButton>button {
     background: linear-gradient(90deg, #1E7E8C, #2D9CDB);
     color: white;
     border-radius: 8px;
-    padding: 0.4rem 1rem;
+    padding: 0.55rem 1rem;
     border: none;
+    width: 100%;
 }
 
-/* Inputs */
+/* INPUT FIELDS */
 input, textarea, .stSelectbox, .stDateInput, .stTimeInput {
     background-color: white !important;
     color: #111 !important;
 }
 
-/* Cards */
+/* TASK CARD */
 .card {
     background: white;
     padding: 12px;
-    border-radius: 10px;
+    border-radius: 12px;
     border-left: 5px solid #2D9CDB;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
+    box-shadow: 0px 2px 6px rgba(0,0,0,0.05);
 }
 
-/* Table header */
+/* TABLE HEADER */
 .table-header {
     background: #1E7E8C;
     color: white;
-    padding: 8px;
-    border-radius: 6px;
+    padding: 10px;
+    border-radius: 8px;
     text-align: center;
     font-weight: bold;
+    margin-bottom: 10px;
 }
+
 </style>
 """, unsafe_allow_html=True)
 
 # ----------------------
-# LOAD DATA SAFE
+# LOAD DATA
 # ----------------------
 def load():
     data = get_all()
@@ -97,29 +115,43 @@ df = load()
 st.title("🛠 Technician Task Board (PRO VERSION)")
 
 # ----------------------
-# MULTI TECH SUPPORT INPUT
+# VIEW SWITCH
 # ----------------------
 view = st.sidebar.radio(
     "View Mode",
     ["📊 Week View", "📅 Day View", "📋 Task Catalog"]
 )
 
-st.sidebar.markdown("## ➕ Assign Task")
+# ----------------------
+# SIDEBAR INPUT (CLEAN SECTIONS)
+# ----------------------
+st.sidebar.markdown("## ➕ Task Entry")
 
-name = st.sidebar.text_input("Task Name")
+with st.sidebar:
+    st.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
+    st.markdown('<div class="sidebar-title">Task Details</div>', unsafe_allow_html=True)
+    name = st.text_input("Task Name")
+    st.markdown('</div>', unsafe_allow_html=True)
 
-techs_selected = st.sidebar.multiselect(
-    "Technicians",
-    TECHS
-)
+    st.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
+    st.markdown('<div class="sidebar-title">Technicians</div>', unsafe_allow_html=True)
+    techs_selected = st.multiselect("Select Technicians", TECHS)
+    st.markdown('</div>', unsafe_allow_html=True)
 
-d = st.sidebar.date_input("Date", date.today())
-start = st.sidebar.time_input("Start Time")
-hours = st.sidebar.number_input("Hours", 0.5, 12.0, step=0.5)
-assigned_by = st.sidebar.text_input("Assigned By")
+    st.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
+    st.markdown('<div class="sidebar-title">Schedule</div>', unsafe_allow_html=True)
+    d = st.date_input("Date", date.today())
+    start = st.time_input("Start Time")
+    hours = st.number_input("Hours", 0.5, 12.0, step=0.5)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
+    st.markdown('<div class="sidebar-title">Assignment</div>', unsafe_allow_html=True)
+    assigned_by = st.text_input("Assigned By")
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # ----------------------
-# CONFLICT CHECK (FIXED FOR MULTI TECH)
+# CONFLICT CHECK
 # ----------------------
 def has_conflict(data, tech, date_str, start_s, end_s):
     for r in data:
@@ -134,16 +166,15 @@ def has_conflict(data, tech, date_str, start_s, end_s):
                     return True, r.get("name")
         except:
             continue
-
     return False, None
 
 # ----------------------
-# SAVE TASK (MULTI TECH FIXED)
+# SAVE TASK
 # ----------------------
 if st.sidebar.button("Save Task"):
 
     if not techs_selected:
-        st.sidebar.error("❌ Please select at least one technician")
+        st.sidebar.error("❌ Select at least one technician")
         st.stop()
 
     start_s = start.strftime("%H:%M")
@@ -152,69 +183,46 @@ if st.sidebar.button("Save Task"):
 
     records = df.to_dict("records")
 
-    # check conflicts for EACH technician
-    conflict_found = False
-
     for t in techs_selected:
         conflict, task = has_conflict(records, t, str(d), start_s, end_s)
 
         if conflict:
-            st.sidebar.error(f"❌ {t} is not available ({task})")
-            conflict_found = True
+            st.sidebar.error(f"❌ {t} is busy ({task})")
+            st.stop()
 
-    if not conflict_found:
+    append_row([
+        str(uuid.uuid4()),
+        name,
+        str(d),
+        start_s,
+        end_s,
+        float(hours),
+        ",".join(techs_selected),
+        assigned_by,
+        "#1E7E8C"
+    ])
 
-        append_row([
-            str(uuid.uuid4()),
-            name,
-            str(d),
-            start_s,
-            end_s,
-            float(hours),
-            ",".join(techs_selected),   # store multiple techs
-            assigned_by,
-            "#1E7E8C"
-        ])
-
-        st.sidebar.success("✅ Task assigned!")
-        st.rerun()
+    st.sidebar.success("✅ Task Assigned")
+    st.rerun()
 
 # ----------------------
-# WEEK VIEW (TABLE STYLE)
+# WEEK VIEW
 # ----------------------
 def week_view():
     st.subheader("📊 Week Overview")
 
-    today = date.today()
-    week = [today + timedelta(days=i) for i in range(6)]
-
-    rows = []
-
     for _, r in df.iterrows():
-        rows.append([
-            r["name"],
-            r["date"],
-            f"{r['start']} - {r['end']}",
-            r["technician"]
-        ])
-
-    st.markdown("""
-    <div class="table-header">
-        TASK | DATE | TIME | TECHNICIANS
-    </div>
-    """, unsafe_allow_html=True)
-
-    for row in rows:
         st.markdown(f"""
         <div class="card">
-            <b>{row[0]}</b><br>
-            📅 {row[1]} | ⏰ {row[2]}<br>
-            👷 {row[3]}
+            <b>{r['name']}</b><br>
+            📅 {r['date']}<br>
+            ⏰ {r['start']} - {r['end']}<br>
+            👷 {r['technician']}
         </div>
         """, unsafe_allow_html=True)
 
 # ----------------------
-# DAY VIEW (TABLE STYLE)
+# DAY VIEW
 # ----------------------
 def day_view():
     st.subheader("📅 Day View")
@@ -223,14 +231,8 @@ def day_view():
 
     day_tasks = df[df["date"] == str(selected)]
 
-    st.markdown("""
-    <div class="table-header">
-        TIME | TASK | TECHNICIANS
-    </div>
-    """, unsafe_allow_html=True)
-
     if day_tasks.empty:
-        st.info("No tasks for this day")
+        st.info("No tasks today")
         return
 
     for _, t in day_tasks.iterrows():
@@ -243,11 +245,10 @@ def day_view():
         """, unsafe_allow_html=True)
 
 # ----------------------
-# CATALOG
+# CATALOG VIEW
 # ----------------------
 def catalog_view():
-    st.subheader("📋 All Tasks")
-
+    st.subheader("📋 Task Catalog")
     st.dataframe(df, use_container_width=True)
 
 # ----------------------
