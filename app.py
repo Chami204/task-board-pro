@@ -1,31 +1,19 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime, timedelta, date
 import uuid
-
 from sheets import get_all, append
-from logic import check_conflict, daily_load
 
-st.set_page_config(layout="wide")
+st.set_page_config(page_title="Task API", layout="wide")
 
-TECHS = ["Dinidu", "Buddhika", "Kosala"]
-
-# ----------------------
-# SAFE DATA LOADING
-# ----------------------
+# ----------------------------
+# LOAD DATA
+# ----------------------------
 def load():
     data = get_all()
 
     columns = [
-        "id",
-        "name",
-        "date",
-        "start",
-        "end",
-        "hours",
-        "technician",
-        "assigned_by",
-        "color"
+        "id", "name", "date", "start", "end",
+        "hours", "technician", "assigned_by", "color"
     ]
 
     if not data:
@@ -33,161 +21,75 @@ def load():
 
     df = pd.DataFrame(data)
 
-    for col in columns:
-        if col not in df.columns:
-            df[col] = ""
+    for c in columns:
+        if c not in df.columns:
+            df[c] = ""
 
     return df
 
 
 df = load()
 
-# Ensure correct types
-if not df.empty:
-    df["hours"] = pd.to_numeric(df["hours"], errors="coerce").fillna(0)
-    df["date"] = df["date"].astype(str)
 
-st.title("🛠 Technician Task Board (PRO VERSION)")
-
-
-# ----------------------
-# SIDEBAR - VIEW SWITCH
-# ----------------------
-view = st.sidebar.radio(
-    "View Mode",
-    ["📊 Week View", "📅 Day View", "📋 Task Catalog"]
-)
+# ----------------------------
+# CONFLICT CHECK (NO DOUBLE BOOKING)
+# ----------------------------
+def time_overlap(start1, end1, start2, end2):
+    return not (end1 <= start2 or start1 >= end2)
 
 
-# ----------------------
-# ADD TASK FORM
-# ----------------------
-st.sidebar.header("➕ Assign Task")
+def has_conflict(tech, date, start, end):
+    tasks = df[
+        (df["technician"] == tech) &
+        (df["date"] == date)
+    ]
 
-name = st.sidebar.text_input("Task Name")
-tech = st.sidebar.selectbox("Technician", TECHS)
-d = st.sidebar.date_input("Date")
-start = st.sidebar.time_input("Start")
-hours = st.sidebar.number_input("Hours", 0.5, 12.0, step=0.5)
-assigned_by = st.sidebar.text_input("Assigned By")
+    for _, t in tasks.iterrows():
+        if time_overlap(start, end, t["start"], t["end"]):
+            return True, t["name"]
+
+    return False, None
 
 
-if st.sidebar.button("Save Task"):
+# ----------------------------
+# API: GET TASKS
+# ----------------------------
+if st.query_params.get("action") == "get":
+    st.json(df.to_dict("records"))
 
-    if not name:
-        st.sidebar.error("Task name required")
+
+# ----------------------------
+# API: ADD TASK
+# ----------------------------
+elif st.query_params.get("action") == "add":
+
+    name = st.query_params.get("name")
+    tech = st.query_params.get("tech")
+    date = st.query_params.get("date")
+    start = st.query_params.get("start")
+    end = st.query_params.get("end")
+    hours = st.query_params.get("hours")
+    assigned_by = st.query_params.get("by", "system")
+
+    if not all([name, tech, date, start, end]):
+        st.json({"status": "error", "message": "Missing fields"})
         st.stop()
 
-    start_s = start.strftime("%H:%M")
-    end_dt = datetime.combine(datetime.today(), start) + timedelta(hours=hours)
-    end_s = end_dt.time().strftime("%H:%M")
-
-    conflict, task = check_conflict(
-        df.to_dict("records"),
-        tech,
-        str(d),
-        start_s,
-        end_s
-    )
+    conflict, task = has_conflict(tech, date, start, end)
 
     if conflict:
-        st.sidebar.error(f"❌ Conflict with: {task}")
+        st.json({"status": "error", "message": f"Conflict with {task}"})
     else:
         append([
             str(uuid.uuid4()),
             name,
-            str(d),
-            start_s,
-            end_s,
+            date,
+            start,
+            end,
             float(hours),
             tech,
             assigned_by,
             "#2D6FB0"
         ])
 
-        st.sidebar.success("✅ Task added!")
-        st.rerun()
-
-
-# ----------------------
-# WEEK VIEW
-# ----------------------
-def week_view():
-    st.subheader("📊 Week Overview")
-
-    today = date.today()
-    week = [today + timedelta(days=i) for i in range(6)]
-
-    # Header
-    cols = st.columns(7)
-    cols[0].write("TECH")
-
-    for i, d in enumerate(week):
-        cols[i + 1].write(d.strftime("%a %d"))
-
-    # Rows
-    for t in TECHS:
-
-        row = [t]
-
-        for d in week:
-
-            day_tasks = df[
-                (df["technician"] == t) &
-                (df["date"] == str(d))
-            ]
-
-            load_hours = day_tasks["hours"].sum() if not day_tasks.empty else 0
-
-            row.append(f"{load_hours}h")
-
-        cols = st.columns(7)
-
-        for i, cell in enumerate(row):
-            cols[i].write(cell)
-
-
-# ----------------------
-# DAY VIEW
-# ----------------------
-def day_view():
-    st.subheader("📅 Day Timeline")
-
-    selected = st.date_input("Select Day", date.today())
-
-    day_tasks = df[df["date"] == str(selected)]
-
-    for tech in TECHS:
-        st.markdown(f"### {tech}")
-
-        tasks = day_tasks[day_tasks["technician"] == tech]
-
-        if tasks.empty:
-            st.write("No tasks")
-        else:
-            for _, t in tasks.iterrows():
-                st.write(
-                    f"🟦 {t['name']} | {t['start']} - {t['end']} | {t['hours']}h"
-                )
-
-
-# ----------------------
-# CATALOG VIEW
-# ----------------------
-def catalog_view():
-    st.subheader("📋 Task List")
-
-    st.dataframe(df, use_container_width=True)
-
-
-# ----------------------
-# ROUTER
-# ----------------------
-if view == "📊 Week View":
-    week_view()
-
-elif view == "📅 Day View":
-    day_view()
-
-elif view == "📋 Task Catalog":
-    catalog_view()
+        st.json({"status": "success"})
