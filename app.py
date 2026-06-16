@@ -2,12 +2,13 @@ import streamlit as st
 import pandas as pd
 import uuid
 from sheets import get_all, append
+from logic import check_conflict
 
 st.set_page_config(page_title="Task API", layout="wide")
 
-# ----------------------------
+# ------------------------
 # LOAD DATA
-# ----------------------------
+# ------------------------
 def load():
     data = get_all()
 
@@ -31,18 +32,15 @@ def load():
 df = load()
 
 
-# ----------------------------
-# CONFLICT CHECK (NO DOUBLE BOOKING)
-# ----------------------------
-def time_overlap(start1, end1, start2, end2):
-    return not (end1 <= start2 or start1 >= end2)
+# ------------------------
+# OVERLAP CHECK
+# ------------------------
+def time_overlap(a_start, a_end, b_start, b_end):
+    return not (a_end <= b_start or a_start >= b_end)
 
 
 def has_conflict(tech, date, start, end):
-    tasks = df[
-        (df["technician"] == tech) &
-        (df["date"] == date)
-    ]
+    tasks = df[(df["technician"] == tech) & (df["date"] == date)]
 
     for _, t in tasks.iterrows():
         if time_overlap(start, end, t["start"], t["end"]):
@@ -51,17 +49,20 @@ def has_conflict(tech, date, start, end):
     return False, None
 
 
-# ----------------------------
-# API: GET TASKS
-# ----------------------------
-if st.query_params.get("action") == "get":
+# ------------------------
+# API ROUTES
+# ------------------------
+
+action = st.query_params.get("action")
+
+
+# GET TASKS
+if action == "get":
     st.json(df.to_dict("records"))
 
 
-# ----------------------------
-# API: ADD TASK
-# ----------------------------
-elif st.query_params.get("action") == "add":
+# ADD TASK
+elif action == "add":
 
     name = st.query_params.get("name")
     tech = st.query_params.get("tech")
@@ -69,16 +70,16 @@ elif st.query_params.get("action") == "add":
     start = st.query_params.get("start")
     end = st.query_params.get("end")
     hours = st.query_params.get("hours")
-    assigned_by = st.query_params.get("by", "system")
+    by = st.query_params.get("by", "system")
 
     if not all([name, tech, date, start, end]):
-        st.json({"status": "error", "message": "Missing fields"})
+        st.json({"status": "error", "msg": "missing fields"})
         st.stop()
 
     conflict, task = has_conflict(tech, date, start, end)
 
     if conflict:
-        st.json({"status": "error", "message": f"Conflict with {task}"})
+        st.json({"status": "error", "msg": f"Conflict with {task}"})
     else:
         append([
             str(uuid.uuid4()),
@@ -88,7 +89,7 @@ elif st.query_params.get("action") == "add":
             end,
             float(hours),
             tech,
-            assigned_by,
+            by,
             "#2D6FB0"
         ])
 
