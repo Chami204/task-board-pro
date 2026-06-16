@@ -24,7 +24,6 @@ def load():
     data = get_all()
     df = pd.DataFrame(data)
 
-    # 🔥 FIX: prevent KeyError if sheet is empty or malformed
     expected_cols = [
         "id", "name", "date", "start", "end",
         "hours", "technician", "assigned_by", "color"
@@ -42,7 +41,7 @@ df = load()
 st.title("🛠 Technician Task Board (PRO VERSION)")
 
 # ----------------------
-# SIDEBAR VIEW SWITCH
+# VIEW SWITCH
 # ----------------------
 view = st.sidebar.radio(
     "View Mode",
@@ -50,7 +49,7 @@ view = st.sidebar.radio(
 )
 
 # ----------------------
-# ADD TASK FORM
+# INPUT FORM
 # ----------------------
 st.sidebar.header("➕ Assign Task")
 
@@ -61,15 +60,34 @@ start = st.sidebar.time_input("Start Time")
 hours = st.sidebar.number_input("Hours", 0.5, 12.0, step=0.5)
 assigned_by = st.sidebar.text_input("Assigned By")
 
+
 # ----------------------
-# CONFLICT CHECK FUNCTION (simple inline)
+# TIME CONVERSION + CONFLICT CHECK
 # ----------------------
-def has_conflict(df, tech, date_str, start_s, end_s):
-    for _, r in df.iterrows():
-        if str(r["technician"]) == tech and str(r["date"]) == date_str:
-            if r["start"] < end_s and start_s < r["end"]:
-                return True, r["name"]
+def to_minutes(t):
+    h, m = map(int, t.split(":"))
+    return h * 60 + m
+
+
+def check_conflict(records, technician, date_str, new_start, new_end):
+    new_start_m = to_minutes(new_start)
+    new_end_m = to_minutes(new_end)
+
+    for r in records:
+        if str(r["technician"]) != technician:
+            continue
+        if str(r["date"]) != date_str:
+            continue
+
+        existing_start = to_minutes(r["start"])
+        existing_end = to_minutes(r["end"])
+
+        # OVERLAP RULE
+        if new_start_m < existing_end and new_end_m > existing_start:
+            return True, r["name"]
+
     return False, None
+
 
 # ----------------------
 # SAVE TASK
@@ -92,22 +110,25 @@ if st.sidebar.button("Save Task"):
     )
 
     if conflict:
-        st.sidebar.error(f"❌ Conflict with: {task}")
-    else:
-        append_row([
-            str(uuid.uuid4()),
-            name,
-            str(d),
-            start_s,
-            end_s,
-            float(hours),
-            tech,
-            assigned_by,
-            "#1E7E8C"
-        ])
+        st.sidebar.error("❌ Technician is not available at this time.")
+        st.sidebar.warning(f"Clashes with: {task}")
+        st.stop()
 
-        st.sidebar.success("✅ Task added!")
-        st.rerun()
+    append_row([
+        str(uuid.uuid4()),
+        name,
+        str(d),
+        start_s,
+        end_s,
+        float(hours),
+        tech,
+        assigned_by,
+        "#1E7E8C"
+    ])
+
+    st.sidebar.success("✅ Task added successfully!")
+    st.rerun()
+
 
 # ----------------------
 # WEEK VIEW
@@ -142,6 +163,7 @@ def week_view():
                     f"<div style='background:#E9EFF2;padding:10px;border-radius:8px;text-align:center'>{cell}</div>",
                     unsafe_allow_html=True
                 )
+
 
 # ----------------------
 # DAY VIEW
@@ -178,13 +200,14 @@ def day_view():
                     unsafe_allow_html=True
                 )
 
+
 # ----------------------
 # CATALOG VIEW
 # ----------------------
 def catalog_view():
     st.subheader("📋 Task Catalog")
-
     st.dataframe(df, use_container_width=True)
+
 
 # ----------------------
 # ROUTER
