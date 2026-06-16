@@ -7,35 +7,49 @@ scope = [
     "https://www.googleapis.com/auth/drive"
 ]
 
+# 🔐 Load credentials ONLY from Streamlit secrets
+creds_dict = st.secrets["gcp_service_account"]
+
 creds = ServiceAccountCredentials.from_json_keyfile_dict(
-    st.secrets["gcp_service_account"],
+    creds_dict,
     scope
 )
 
 client = gspread.authorize(creds)
 
-sheet = client.open_by_key(
-    "1P1f1rW4l1a_hRUGZMJdhkpm7PKenbBFKvV6p5rRjXPs"
-).sheet1
+# ✅ IMPORTANT: use your sheet ID (NOT name)
+SHEET_ID = "YOUR_SHEET_ID"
+
+sheet = client.open_by_key(SHEET_ID).sheet1
 
 
-HEADERS = [
-    "id", "name", "date", "start", "end",
-    "hours", "technician", "assigned_by", "color"
-]
+# -----------------------
+# INIT HEADERS AUTOMATICALLY
+# -----------------------
+def init_sheet():
+    if sheet.row_count == 0 or sheet.get_all_values() == []:
+        sheet.append_row([
+            "id",
+            "name",
+            "date",
+            "start",
+            "end",
+            "hours",
+            "technician",
+            "assigned_by",
+            "color"
+        ])
 
-values = sheet.get_all_values()
 
-if len(values) == 0:
-    sheet.append_row(HEADERS)
-elif values[0] != HEADERS:
-    sheet.clear()
-    sheet.append_row(HEADERS)
-
-
+# -----------------------
+# READ
+# -----------------------
 def get_all():
     return sheet.get_all_records()
 
 
-def append(row):
+# -----------------------
+# WRITE
+# -----------------------
+def append_row(row):
     sheet.append_row(row)
