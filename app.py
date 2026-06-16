@@ -16,37 +16,6 @@ init_sheet()
 TECHS = ["Dinidu", "Buddhika", "Kosala"]
 
 # ----------------------
-# VIEW MODE
-# ----------------------
-view_mode = st.radio(
-    "View Mode",
-    ["📱 Mobile View", "💻 Desktop View"],
-    horizontal=True
-)
-
-# ----------------------
-# CLEAN UI (NO COLOR CHANGE)
-# ----------------------
-st.markdown("""
-<style>
-.task-card {
-    background: #ffffff;
-    border: 1px solid #e6e6e6;
-    padding: 10px;
-    border-radius: 10px;
-    margin-bottom: 8px;
-}
-
-/* Mobile text only smaller */
-@media (max-width: 768px) {
-    html, body, [class*="css"] {
-        font-size: 13px !important;
-    }
-}
-</style>
-""", unsafe_allow_html=True)
-
-# ----------------------
 # LOAD DATA
 # ----------------------
 def load():
@@ -85,35 +54,6 @@ def has_conflict(df, tech, date_str, start_s, end_s, ignore_id=None):
 
 
 # ----------------------
-# UPDATE TASK (DRAG & DROP)
-# ----------------------
-def update_task(task_id, new_start_dt, new_end_dt):
-
-    for _, r in df.iterrows():
-        if str(r["id"]) == str(task_id):
-
-            tech = r["technician"]
-            date_str = new_start_dt.date().strftime("%Y-%m-%d")
-            start_s = new_start_dt.strftime("%H:%M")
-            end_s = new_end_dt.strftime("%H:%M")
-
-            conflict, task = has_conflict(df, tech, date_str, start_s, end_s, task_id)
-
-            if conflict:
-                return False, task
-
-            update_row(task_id, {
-                "date": date_str,
-                "start": start_s,
-                "end": end_s
-            })
-
-            return True, None
-
-    return False, "Task not found"
-
-
-# ----------------------
 # SAVE TASK
 # ----------------------
 def save_task(name, tech, d, start, hours, assigned_by):
@@ -143,6 +83,37 @@ def save_task(name, tech, d, start, hours, assigned_by):
 
 
 # ----------------------
+# UPDATE (DRAG & DROP)
+# ----------------------
+def update_task(task_id, new_start, new_end):
+
+    for _, r in df.iterrows():
+
+        if str(r["id"]) != str(task_id):
+            continue
+
+        tech = r["technician"]
+        date_str = new_start.date().strftime("%Y-%m-%d")
+        start_s = new_start.strftime("%H:%M")
+        end_s = new_end.strftime("%H:%M")
+
+        conflict, task = has_conflict(df, tech, date_str, start_s, end_s, task_id)
+
+        if conflict:
+            return False, task
+
+        update_row(task_id, {
+            "date": date_str,
+            "start": start_s,
+            "end": end_s
+        })
+
+        return True, None
+
+    return False, "Task not found"
+
+
+# ----------------------
 # SIDEBAR INPUT
 # ----------------------
 st.sidebar.header("➕ Assign Task")
@@ -164,14 +135,14 @@ if st.sidebar.button("Save Task"):
             errors.append(f"{t} busy with {conflict}")
 
     if errors:
-        st.sidebar.error(" ❌ " + " | ".join(errors))
+        st.sidebar.error("❌ " + " | ".join(errors))
     else:
         st.sidebar.success("Task added")
         st.rerun()
 
 
 # ----------------------
-# CALENDAR EVENTS
+# EVENTS
 # ----------------------
 def build_events(df):
     events = []
@@ -197,7 +168,7 @@ def build_events(df):
 events = build_events(df)
 
 # ----------------------
-# CALENDAR OPTIONS (DRAG ENABLED)
+# CALENDAR OPTIONS
 # ----------------------
 calendar_options = {
     "editable": True,
@@ -211,38 +182,40 @@ calendar_options = {
 }
 
 # ----------------------
-# HANDLE DRAG & DROP
+# PAGE TITLE
+# ----------------------
+st.title("🛠 Technician Scheduler")
+
+st.markdown("### 📅 Schedule (Mobile + Desktop Friendly)")
+
+# ----------------------
+# SINGLE CALENDAR ONLY (FIXED DUPLICATION)
 # ----------------------
 calendar_result = calendar(
     events=events,
     options=calendar_options,
-    key="scheduler"
+    key="main_calendar"
 )
 
-if calendar_result and "eventDrop" in calendar_result:
-
-    event = calendar_result["eventDrop"]["event"]
-
-    task_id = event["id"]
-    new_start = datetime.fromisoformat(event["start"])
-    new_end = datetime.fromisoformat(event["end"])
-
-    ok, msg = update_task(task_id, new_start, new_end)
-
-    if ok:
-        st.success("Updated successfully")
-        st.rerun()
-    else:
-        st.error(f"❌ {msg}")
-
-
 # ----------------------
-# UI
+# HANDLE DRAG & DROP
 # ----------------------
-st.title("🛠 Technician Scheduler")
+if calendar_result and isinstance(calendar_result, dict):
 
-if view_mode == "📱 Mobile View":
-    calendar(events=events, options=calendar_options, key="mobile")
+    event_type = list(calendar_result.keys())[0]
 
-else:
-    calendar(events=events, options=calendar_options, key="desktop")
+    if event_type == "eventDrop" or event_type == "eventChange":
+
+        event = calendar_result[event_type]["event"]
+
+        task_id = event["id"]
+        new_start = datetime.fromisoformat(event["start"])
+        new_end = datetime.fromisoformat(event["end"])
+
+        ok, msg = update_task(task_id, new_start, new_end)
+
+        if ok:
+            st.success("Updated successfully")
+            st.rerun()
+        else:
+            st.error(f"❌ {msg}")
