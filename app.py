@@ -6,7 +6,7 @@ import uuid
 from sheets import get_all, append_row, init_sheet
 
 # ----------------------
-# CONFIG
+# PAGE CONFIG
 # ----------------------
 st.set_page_config(page_title="Technician Task Board", layout="wide")
 
@@ -36,9 +36,8 @@ df = load()
 
 st.title("🛠 Technician Task Board (PRO VERSION)")
 
-
 # ----------------------
-# CONFLICT CHECK (MULTI TECH)
+# CONFLICT CHECK
 # ----------------------
 def has_conflict(df, tech, date_str, start_s, end_s):
     for _, r in df.iterrows():
@@ -50,6 +49,7 @@ def has_conflict(df, tech, date_str, start_s, end_s):
         if tech in tech_list:
             if r["start"] < end_s and start_s < r["end"]:
                 return True, r["name"]
+
     return False, None
 
 
@@ -86,7 +86,7 @@ if st.sidebar.button("Save Task"):
 
     records = df.to_dict("records")
 
-    # conflict check for EACH technician
+    # conflict check per technician
     for t in tech_multi:
         conflict, task = has_conflict(records, t, str(d), start_s, end_s)
         if conflict:
@@ -110,71 +110,67 @@ if st.sidebar.button("Save Task"):
 
 
 # ----------------------
-# WEEK VIEW (TIME GRID)
+# WEEK VIEW (TIME RANGE TABLE)
 # ----------------------
 def week_view():
-    st.subheader("📊 Week Time Grid")
+    st.subheader("📊 Week Overview (Time Range View)")
 
     today = date.today()
     week = [today + timedelta(days=i) for i in range(6)]
 
-    hours_range = list(range(6, 22))  # 6AM - 9PM
-
     for d in week:
         st.markdown(f"## {d.strftime('%A %d %b')}")
 
-        grid = pd.DataFrame(index=[f"{h}:00" for h in hours_range], columns=TECHS)
-        grid[:] = ""
-
         day_tasks = df[df["date"] == str(d)]
 
+        if day_tasks.empty:
+            st.info("No tasks")
+            continue
+
+        table_data = []
+
         for _, t in day_tasks.iterrows():
-            techs = [x.strip() for x in str(t["technician"]).split(",")]
+            table_data.append({
+                "Time": f"{t['start']} - {t['end']}",
+                "Task": t["name"],
+                "Technicians": t["technician"],
+                "Hours": t["hours"],
+                "Assigned By": t["assigned_by"]
+            })
 
-            start_h = int(t["start"].split(":")[0])
-            end_h = int(t["end"].split(":")[0])
-
-            for h in range(start_h, end_h + 1):
-                time_slot = f"{h}:00"
-                for tech in techs:
-                    if tech in TECHS and time_slot in grid.index:
-                        grid.loc[time_slot, tech] = t["name"]
-
-        st.dataframe(grid, use_container_width=True)
+        st.dataframe(pd.DataFrame(table_data), use_container_width=True)
 
 
 # ----------------------
-# DAY VIEW (TIME GRID)
+# DAY VIEW (TIME RANGE TABLE)
 # ----------------------
 def day_view():
-    st.subheader("📅 Day Time Grid")
+    st.subheader("📅 Day Schedule (Time Range View)")
 
     selected = st.date_input("Select Day", date.today())
 
-    hours_range = list(range(6, 22))
-
-    grid = pd.DataFrame(index=[f"{h}:00" for h in hours_range], columns=TECHS)
-    grid[:] = ""
-
     day_tasks = df[df["date"] == str(selected)]
 
+    if day_tasks.empty:
+        st.info("No tasks for this day")
+        return
+
+    table_data = []
+
     for _, t in day_tasks.iterrows():
-        techs = [x.strip() for x in str(t["technician"]).split(",")]
+        table_data.append({
+            "Time": f"{t['start']} - {t['end']}",
+            "Task": t["name"],
+            "Technicians": t["technician"],
+            "Hours": t["hours"],
+            "Assigned By": t["assigned_by"]
+        })
 
-        start_h = int(t["start"].split(":")[0])
-        end_h = int(t["end"].split(":")[0])
-
-        for h in range(start_h, end_h + 1):
-            time_slot = f"{h}:00"
-            for tech in techs:
-                if tech in TECHS and time_slot in grid.index:
-                    grid.loc[time_slot, tech] = t["name"]
-
-    st.dataframe(grid, use_container_width=True)
+    st.dataframe(pd.DataFrame(table_data), use_container_width=True)
 
 
 # ----------------------
-# CATALOG
+# CATALOG VIEW
 # ----------------------
 def catalog_view():
     st.subheader("📋 Task Catalog")
