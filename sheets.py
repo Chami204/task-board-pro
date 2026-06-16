@@ -19,7 +19,7 @@ print("=== FILES VISIBLE TO SERVICE ACCOUNT ===")
 for f in files:
     print(f["name"], f["id"])
 
-sheet = client.open("1P1f1rW4l1a_hRUGZMJdhkpm7PKenbBFKvV6p5rRjXPs").sheet1
+sheet = client.open_by_key("1P1f1rW4l1a_hRUGZMJdhkpm7PKenbBFKvV6p5rRjXPs").sheet1
 
 
 def get_all():
