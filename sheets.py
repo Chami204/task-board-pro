@@ -7,9 +7,10 @@ scope = [
     "https://www.googleapis.com/auth/drive"
 ]
 
-creds_dict = st.secrets["gcp_service_account"]
-
-creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+creds = ServiceAccountCredentials.from_json_keyfile_dict(
+    st.secrets["gcp_service_account"],
+    scope
+)
 
 client = gspread.authorize(creds)
 
@@ -18,9 +19,6 @@ sheet = client.open_by_key(
 ).sheet1
 
 
-# ----------------------------
-# AUTO CREATE HEADERS
-# ----------------------------
 HEADERS = [
     "id", "name", "date", "start", "end",
     "hours", "technician", "assigned_by", "color"
@@ -35,15 +33,9 @@ elif values[0] != HEADERS:
     sheet.append_row(HEADERS)
 
 
-# ----------------------------
-# GET ALL DATA
-# ----------------------------
 def get_all():
     return sheet.get_all_records()
 
 
-# ----------------------------
-# APPEND ROW
-# ----------------------------
 def append(row):
     sheet.append_row(row)
