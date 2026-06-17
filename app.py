@@ -9,7 +9,7 @@ from sheets import get_all, append_row, update_row, delete_row, init_sheet
 # ----------------------
 # CONFIG
 # ----------------------
-st.set_page_config(page_title="Technician Scheduler", layout="wide")
+st.set_page_config(page_title="R&D Project Schedule - Sohan and Team", layout="wide")
 
 init_sheet()
 
