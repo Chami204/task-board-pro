@@ -4,7 +4,7 @@ from datetime import datetime, date, timedelta
 import uuid
 
 from streamlit_calendar import calendar
-from sheets import get_all, append_row, update_row, init_sheet
+from sheets import get_all, append_row, update_row, delete_row, init_sheet
 
 # ----------------------
 # CONFIG
@@ -27,6 +27,7 @@ def load():
             df[c] = ""
 
     return df
+
 
 df = load()
 
@@ -83,7 +84,7 @@ def save_task(name, tech, d, start, hours, assigned_by):
 
 
 # ----------------------
-# UPDATE (DRAG & DROP)
+# UPDATE TASK (DRAG DROP)
 # ----------------------
 def update_task(task_id, new_start, new_end):
 
@@ -111,6 +112,13 @@ def update_task(task_id, new_start, new_end):
         return True, None
 
     return False, "Task not found"
+
+
+# ----------------------
+# DELETE TASK
+# ----------------------
+def delete_task(task_id):
+    return delete_row(task_id)
 
 
 # ----------------------
@@ -168,54 +176,82 @@ def build_events(df):
 events = build_events(df)
 
 # ----------------------
-# CALENDAR OPTIONS
+# UI TABS (NEW FEATURE)
 # ----------------------
-calendar_options = {
-    "editable": True,
-    "selectable": True,
-    "initialView": "timeGridWeek",
-    "headerToolbar": {
-        "left": "prev,next today",
-        "center": "title",
-        "right": "dayGridMonth,timeGridWeek,timeGridDay"
+tab1, tab2 = st.tabs(["📅 Calendar", "📋 Spreadsheet View"])
+
+# ======================
+# TAB 1 - CALENDAR
+# ======================
+with tab1:
+
+    st.title("🛠 Technician Scheduler")
+
+    calendar_options = {
+        "editable": True,
+        "selectable": True,
+        "initialView": "timeGridWeek",
+        "headerToolbar": {
+            "left": "prev,next today",
+            "center": "title",
+            "right": "dayGridMonth,timeGridWeek,timeGridDay"
+        }
     }
-}
 
-# ----------------------
-# PAGE TITLE
-# ----------------------
-st.title("🛠 Technician Scheduler")
+    calendar_result = calendar(
+        events=events,
+        options=calendar_options,
+        key="main_calendar"
+    )
 
-st.markdown("### 📅 Schedule (Mobile + Desktop Friendly)")
+    if calendar_result and isinstance(calendar_result, dict):
 
-# ----------------------
-# SINGLE CALENDAR ONLY (FIXED DUPLICATION)
-# ----------------------
-calendar_result = calendar(
-    events=events,
-    options=calendar_options,
-    key="main_calendar"
-)
+        event_type = list(calendar_result.keys())[0]
 
-# ----------------------
-# HANDLE DRAG & DROP
-# ----------------------
-if calendar_result and isinstance(calendar_result, dict):
+        if event_type in ["eventDrop", "eventChange"]:
 
-    event_type = list(calendar_result.keys())[0]
+            event = calendar_result[event_type]["event"]
 
-    if event_type == "eventDrop" or event_type == "eventChange":
+            task_id = event["id"]
+            new_start = datetime.fromisoformat(event["start"])
+            new_end = datetime.fromisoformat(event["end"])
 
-        event = calendar_result[event_type]["event"]
+            ok, msg = update_task(task_id, new_start, new_end)
 
-        task_id = event["id"]
-        new_start = datetime.fromisoformat(event["start"])
-        new_end = datetime.fromisoformat(event["end"])
+            if ok:
+                st.success("Updated successfully")
+                st.rerun()
+            else:
+                st.error(f"❌ {msg}")
 
-        ok, msg = update_task(task_id, new_start, new_end)
 
-        if ok:
-            st.success("Updated successfully")
+# ======================
+# TAB 2 - SPREADSHEET
+# ======================
+with tab2:
+
+    st.subheader("📋 Editable Task Sheet")
+
+    edited_df = st.data_editor(
+        df,
+        use_container_width=True,
+        num_rows="dynamic"
+    )
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        if st.button("💾 Save Changes to Google Sheets"):
+            for _, row in edited_df.iterrows():
+                update_row(row["id"], row.to_dict())
+
+            st.success("Saved successfully!")
             st.rerun()
-        else:
-            st.error(f"❌ {msg}")
+
+    with col2:
+        delete_id = st.selectbox("Delete Task", df["id"].tolist())
+
+        if st.button("🗑 Delete Task"):
+            delete_task(delete_id)
+            st.success("Deleted successfully!")
+            st.rerun()
