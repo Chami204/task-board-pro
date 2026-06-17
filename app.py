@@ -16,6 +16,50 @@ init_sheet()
 TECHS = ["Dinidu", "Buddhika", "Lakshan","Maindu","Naveen","Samitha"]
 
 # ----------------------
+
+# ----------------------
+# UI STYLING (TEXT SIZE FIX ADDED HERE)
+# ----------------------
+st.markdown("""
+<style>
+
+/* ================= GLOBAL TEXT SIZE ================= */
+html, body, [class*="css"] {
+    font-size: 13px !important;
+}
+
+/* ================= SIDEBAR ================= */
+section[data-testid="stSidebar"] {
+    font-size: 13px !important;
+}
+
+/* ================= CALENDAR ================= */
+.fc {
+    font-size: 12px !important;
+}
+
+.fc-event-title {
+    font-size: 11px !important;
+}
+
+/* ================= TABLE / DATA EDITOR ================= */
+div[data-testid="stDataFrame"],
+div[data-testid="stDataEditor"] {
+    font-size: 12px !important;
+}
+
+/* ================= MOBILE OPTIMIZATION ================= */
+@media (max-width: 768px) {
+    html, body, [class*="css"] {
+        font-size: 12px !important;
+    }
+}
+
+</style>
+""", unsafe_allow_html=True)
+
+# ----------------------
+
 # LOAD DATA
 # ----------------------
 def load():
