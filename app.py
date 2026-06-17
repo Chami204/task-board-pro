@@ -13,7 +13,7 @@ st.set_page_config(page_title="R&D Project Schedule - Sohan and Team", layout="w
 
 init_sheet()
 
-TECHS = ["Dinidu", "Buddhika", "Kosala"]
+TECHS = ["Dinidu", "Buddhika", "Lakshan","Maindu","Naveen","Samitha"]
 
 # ----------------------
 # LOAD DATA
