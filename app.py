@@ -185,7 +185,7 @@ tab1, tab2 = st.tabs(["📅 Calendar", "📋 Spreadsheet View"])
 # ======================
 with tab1:
 
-    st.title("🛠 Technician Scheduler")
+    st.title("🛠 R&D Project Schedule - Sohan and Team")
 
     calendar_options = {
         "editable": True,
