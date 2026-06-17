@@ -65,7 +65,16 @@ def update_row(task_id, updates):
         "end": "12:00"
     }
     """
+def delete_row(task_id):
+    data = sheet.get_all_records()
 
+    for i, row in enumerate(data, start=2):
+        if str(row["id"]) == str(task_id):
+            sheet.delete_rows(i)
+            return True
+
+    return False
+    
     data = sheet.get_all_records()
     headers = sheet.row_values(1)
 
