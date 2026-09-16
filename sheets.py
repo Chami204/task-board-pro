@@ -4,16 +4,21 @@ from google.oauth2.service_account import Credentials
 
 
 # ============================================================
-# CONFIGURATION
+# CONFIG
 # ============================================================
 
 SHEET_NAME = "TaskBoard"
 
 TASKS_WORKSHEET = "Tasks"
 TECHNICIANS_WORKSHEET = "Technicians"
+PROJECTS_WORKSHEET = "Projects"
 SETTINGS_WORKSHEET = "Settings"
 
 
+# IMPORTANT:
+# The original 14 columns stay in exactly the same order.
+# New columns are appended at the end so existing records
+# remain aligned.
 TASK_HEADERS = [
     "id",
     "name",
@@ -29,6 +34,12 @@ TASK_HEADERS = [
     "progress",
     "notes",
     "color",
+
+    # New columns - appended only
+    "project_id",
+    "project",
+    "location",
+    "technician_comments",
 ]
 
 
@@ -36,6 +47,15 @@ TECHNICIAN_HEADERS = [
     "id",
     "name",
     "active",
+]
+
+
+PROJECT_HEADERS = [
+    "id",
+    "name",
+    "description",
+    "active",
+    "created_at",
 ]
 
 
@@ -60,7 +80,7 @@ def column_letter(number):
 
 
 # ============================================================
-# GOOGLE SHEETS CONNECTION
+# GOOGLE CONNECTION
 # ============================================================
 
 @st.cache_resource
@@ -84,7 +104,7 @@ def get_spreadsheet():
 
 
 # ============================================================
-# WORKSHEETS
+# WORKSHEET HELPERS
 # ============================================================
 
 def get_or_create_worksheet(name, headers):
@@ -114,6 +134,13 @@ def get_technician_worksheet():
     return get_or_create_worksheet(
         TECHNICIANS_WORKSHEET,
         TECHNICIAN_HEADERS,
+    )
+
+
+def get_project_worksheet():
+    return get_or_create_worksheet(
+        PROJECTS_WORKSHEET,
+        PROJECT_HEADERS,
     )
 
 
@@ -164,6 +191,7 @@ def ensure_headers(worksheet, required_headers):
 def init_sheet():
     task_sheet = get_task_worksheet()
     technician_sheet = get_technician_worksheet()
+    project_sheet = get_project_worksheet()
     settings_sheet = get_settings_worksheet()
 
     ensure_headers(
@@ -177,33 +205,18 @@ def init_sheet():
     )
 
     ensure_headers(
+        project_sheet,
+        PROJECT_HEADERS,
+    )
+
+    ensure_headers(
         settings_sheet,
         SETTINGS_HEADERS,
     )
 
 
 # ============================================================
-# TASKS
-# ============================================================
-
-def get_all():
-    worksheet = get_task_worksheet()
-    return worksheet.get_all_records()
-
-
-def append_row(row):
-    worksheet = get_task_worksheet()
-
-    worksheet.append_row(
-        row,
-        value_input_option="USER_ENTERED",
-    )
-
-    return True
-
-
-# ============================================================
-# ROW LOOKUP
+# GENERIC ROW LOOKUP
 # ============================================================
 
 def find_row_by_id(worksheet, item_id):
@@ -230,24 +243,22 @@ def update_record(worksheet, item_id, data):
         return False
 
     headers = worksheet.row_values(1)
-
     updates = []
 
     for key, value in data.items():
+
         if key not in headers:
             continue
 
         column_number = headers.index(key) + 1
         column = column_letter(column_number)
 
-        # Convert NaN to blank.
         try:
             if value != value:
                 value = ""
         except Exception:
             pass
 
-        # Convert bools to Google Sheets-friendly values.
         if isinstance(value, bool):
             value = "TRUE" if value else "FALSE"
 
@@ -265,14 +276,27 @@ def update_record(worksheet, item_id, data):
 
 
 # ============================================================
-# TASK UPDATE / DELETE
+# TASKS
 # ============================================================
 
-def update_row(task_id, data):
+def get_all():
+    return get_task_worksheet().get_all_records()
+
+
+def append_row(row):
     worksheet = get_task_worksheet()
 
+    worksheet.append_row(
+        row,
+        value_input_option="USER_ENTERED",
+    )
+
+    return True
+
+
+def update_row(task_id, data):
     return update_record(
-        worksheet,
+        get_task_worksheet(),
         task_id,
         data,
     )
@@ -299,8 +323,7 @@ def delete_row(task_id):
 # ============================================================
 
 def get_technicians():
-    worksheet = get_technician_worksheet()
-    return worksheet.get_all_records()
+    return get_technician_worksheet().get_all_records()
 
 
 def add_technician(
@@ -326,11 +349,51 @@ def update_technician(
     technician_id,
     data,
 ):
-    worksheet = get_technician_worksheet()
-
     return update_record(
-        worksheet,
+        get_technician_worksheet(),
         technician_id,
+        data,
+    )
+
+
+# ============================================================
+# PROJECTS
+# ============================================================
+
+def get_projects():
+    return get_project_worksheet().get_all_records()
+
+
+def add_project(
+    project_id,
+    name,
+    description,
+    active,
+    created_at,
+):
+    worksheet = get_project_worksheet()
+
+    worksheet.append_row(
+        [
+            project_id,
+            name,
+            description,
+            "TRUE" if active else "FALSE",
+            created_at,
+        ],
+        value_input_option="USER_ENTERED",
+    )
+
+    return True
+
+
+def update_project(
+    project_id,
+    data,
+):
+    return update_record(
+        get_project_worksheet(),
+        project_id,
         data,
     )
 
@@ -340,22 +403,11 @@ def update_technician(
 # ============================================================
 
 def get_settings():
-    worksheet = get_settings_worksheet()
-    return worksheet.get_all_records()
+    return get_settings_worksheet().get_all_records()
 
 
 def get_setting(key, default=""):
-    """
-    Return one value from the Settings worksheet.
-
-    Expected worksheet:
-
-    key                 value
-    manager_password    example-password
-    """
-
-    worksheet = get_settings_worksheet()
-    records = worksheet.get_all_records()
+    records = get_settings()
 
     wanted_key = str(key).strip()
 
