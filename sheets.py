@@ -4,7 +4,7 @@ from google.oauth2.service_account import Credentials
 
 
 # ============================================================
-# CONFIG
+# CONFIGURATION
 # ============================================================
 
 SHEET_NAME = "TaskBoard"
@@ -46,105 +46,64 @@ SETTINGS_HEADERS = [
 
 
 # ============================================================
-# COLUMN LETTER
+# HELPERS
 # ============================================================
 
 def column_letter(number):
-
     result = ""
 
     while number:
-
-        number, remainder = divmod(
-            number - 1,
-            26,
-        )
-
-        result = (
-            chr(65 + remainder)
-            + result
-        )
+        number, remainder = divmod(number - 1, 26)
+        result = chr(65 + remainder) + result
 
     return result
 
 
 # ============================================================
-# GOOGLE CONNECTION
+# GOOGLE SHEETS CONNECTION
 # ============================================================
 
 @st.cache_resource
 def get_client():
-
     scopes = [
         "https://www.googleapis.com/auth/spreadsheets",
         "https://www.googleapis.com/auth/drive",
     ]
 
-    credentials = (
-        Credentials.from_service_account_info(
-            dict(
-                st.secrets[
-                    "gcp_service_account"
-                ]
-            ),
-            scopes=scopes,
-        )
+    credentials = Credentials.from_service_account_info(
+        dict(st.secrets["gcp_service_account"]),
+        scopes=scopes,
     )
 
-    return gspread.authorize(
-        credentials
-    )
+    return gspread.authorize(credentials)
 
 
 @st.cache_resource
 def get_spreadsheet():
-
-    client = get_client()
-
-    return client.open(
-        SHEET_NAME
-    )
+    return get_client().open(SHEET_NAME)
 
 
 # ============================================================
-# WORKSHEET HELPERS
+# WORKSHEETS
 # ============================================================
 
-def get_or_create_worksheet(
-    worksheet_name,
-    headers,
-):
-
-    spreadsheet = (
-        get_spreadsheet()
-    )
+def get_or_create_worksheet(name, headers):
+    spreadsheet = get_spreadsheet()
 
     try:
-
-        worksheet = (
-            spreadsheet.worksheet(
-                worksheet_name
-            )
-        )
+        worksheet = spreadsheet.worksheet(name)
 
     except gspread.WorksheetNotFound:
-
-        worksheet = (
-            spreadsheet.add_worksheet(
-                title=worksheet_name,
-                rows=1000,
-                cols=max(
-                    len(headers),
-                    10,
-                ),
-            )
+        worksheet = spreadsheet.add_worksheet(
+            title=name,
+            rows=1000,
+            cols=max(len(headers), 10),
         )
 
     return worksheet
 
 
 def get_task_worksheet():
-
     return get_or_create_worksheet(
         TASKS_WORKSHEET,
         TASK_HEADERS,
@@ -152,7 +111,6 @@ def get_task_worksheet():
 
 
 def get_technician_worksheet():
-
     return get_or_create_worksheet(
         TECHNICIANS_WORKSHEET,
         TECHNICIAN_HEADERS,
@@ -160,7 +118,6 @@ def get_technician_worksheet():
 
 
 def get_settings_worksheet():
-
     return get_or_create_worksheet(
         SETTINGS_WORKSHEET,
         SETTINGS_HEADERS,
@@ -171,67 +128,32 @@ def get_settings_worksheet():
 # HEADERS
 # ============================================================
 
-def ensure_headers(
-    worksheet,
-    required_headers,
-):
-
-    values = (
-        worksheet.get_all_values()
-    )
+def ensure_headers(worksheet, required_headers):
+    values = worksheet.get_all_values()
 
     if not values:
-
-        end_column = column_letter(
-            len(required_headers)
-        )
+        end_column = column_letter(len(required_headers))
 
         worksheet.update(
-            range_name=(
-                f"A1:{end_column}1"
-            ),
-            values=[
-                required_headers
-            ],
+            range_name=f"A1:{end_column}1",
+            values=[required_headers],
         )
 
         return
 
-
-    existing_headers = (
-        values[0]
-    )
-
-    updated_headers = (
-        existing_headers.copy()
-    )
-
+    existing_headers = values[0]
+    updated_headers = existing_headers.copy()
 
     for header in required_headers:
-
         if header not in updated_headers:
+            updated_headers.append(header)
 
-            updated_headers.append(
-                header
-            )
-
-
-    if (
-        updated_headers
-        != existing_headers
-    ):
-
-        end_column = column_letter(
-            len(updated_headers)
-        )
+    if updated_headers != existing_headers:
+        end_column = column_letter(len(updated_headers))
 
         worksheet.update(
-            range_name=(
-                f"A1:{end_column}1"
-            ),
-            values=[
-                updated_headers
-            ],
+            range_name=f"A1:{end_column}1",
+            values=[updated_headers],
         )
 
 
@@ -240,19 +162,9 @@ def ensure_headers(
 # ============================================================
 
 def init_sheet():
-
-    task_sheet = (
-        get_task_worksheet()
-    )
-
-    technician_sheet = (
-        get_technician_worksheet()
-    )
-
-    settings_sheet = (
-        get_settings_worksheet()
-    )
-
+    task_sheet = get_task_worksheet()
+    technician_sheet = get_technician_worksheet()
+    settings_sheet = get_settings_worksheet()
 
     ensure_headers(
         task_sheet,
@@ -275,56 +187,30 @@ def init_sheet():
 # ============================================================
 
 def get_all():
-
-    worksheet = (
-        get_task_worksheet()
-    )
-
-    return (
-        worksheet.get_all_records()
-    )
+    worksheet = get_task_worksheet()
+    return worksheet.get_all_records()
 
 
 def append_row(row):
-
-    worksheet = (
-        get_task_worksheet()
-    )
+    worksheet = get_task_worksheet()
 
     worksheet.append_row(
         row,
-        value_input_option=(
-            "USER_ENTERED"
-        ),
+        value_input_option="USER_ENTERED",
     )
 
     return True
 
 
 # ============================================================
-# FIND ROW
+# ROW LOOKUP
 # ============================================================
 
-def find_row_by_id(
-    worksheet,
-    item_id,
-):
+def find_row_by_id(worksheet, item_id):
+    ids = worksheet.col_values(1)
 
-    ids = (
-        worksheet.col_values(1)
-    )
-
-    for row_number, value in enumerate(
-        ids,
-        start=1,
-    ):
-
-        if (
-            str(value).strip()
-            ==
-            str(item_id).strip()
-        ):
-
+    for row_number, value in enumerate(ids, start=1):
+        if str(value).strip() == str(item_id).strip():
             return row_number
 
     return None
@@ -334,110 +220,56 @@ def find_row_by_id(
 # GENERIC UPDATE
 # ============================================================
 
-def update_record(
-    worksheet,
-    item_id,
-    data,
-):
-
-    row_number = (
-        find_row_by_id(
-            worksheet,
-            item_id,
-        )
+def update_record(worksheet, item_id, data):
+    row_number = find_row_by_id(
+        worksheet,
+        item_id,
     )
 
     if not row_number:
-
         return False
 
-
-    headers = (
-        worksheet.row_values(1)
-    )
+    headers = worksheet.row_values(1)
 
     updates = []
 
-
-    for key, value in (
-        data.items()
-    ):
-
+    for key, value in data.items():
         if key not in headers:
-
             continue
 
+        column_number = headers.index(key) + 1
+        column = column_letter(column_number)
 
-        column_number = (
-            headers.index(key)
-            + 1
-        )
-
-        column = column_letter(
-            column_number
-        )
-
-
-        # Handle NaN
+        # Convert NaN to blank.
         try:
-
             if value != value:
-
                 value = ""
-
         except Exception:
-
             pass
 
-
-        # Handle booleans
-        if isinstance(
-            value,
-            bool,
-        ):
-
-            value = (
-                "TRUE"
-                if value
-                else "FALSE"
-            )
-
+        # Convert bools to Google Sheets-friendly values.
+        if isinstance(value, bool):
+            value = "TRUE" if value else "FALSE"
 
         updates.append(
             {
-                "range": (
-                    f"{column}"
-                    f"{row_number}"
-                ),
-                "values": [
-                    [value]
-                ],
+                "range": f"{column}{row_number}",
+                "values": [[value]],
             }
         )
 
-
     if updates:
-
-        worksheet.batch_update(
-            updates
-        )
-
+        worksheet.batch_update(updates)
 
     return True
 
 
 # ============================================================
-# UPDATE TASK
+# TASK UPDATE / DELETE
 # ============================================================
 
-def update_row(
-    task_id,
-    data,
-):
-
-    worksheet = (
-        get_task_worksheet()
-    )
+def update_row(task_id, data):
+    worksheet = get_task_worksheet()
 
     return update_record(
         worksheet,
@@ -446,31 +278,18 @@ def update_row(
     )
 
 
-# ============================================================
-# DELETE TASK
-# ============================================================
-
 def delete_row(task_id):
+    worksheet = get_task_worksheet()
 
-    worksheet = (
-        get_task_worksheet()
-    )
-
-    row_number = (
-        find_row_by_id(
-            worksheet,
-            task_id,
-        )
+    row_number = find_row_by_id(
+        worksheet,
+        task_id,
     )
 
     if not row_number:
-
         return False
 
-
-    worksheet.delete_rows(
-        row_number
-    )
+    worksheet.delete_rows(row_number)
 
     return True
 
@@ -480,14 +299,8 @@ def delete_row(task_id):
 # ============================================================
 
 def get_technicians():
-
-    worksheet = (
-        get_technician_worksheet()
-    )
-
-    return (
-        worksheet.get_all_records()
-    )
+    worksheet = get_technician_worksheet()
+    return worksheet.get_all_records()
 
 
 def add_technician(
@@ -495,27 +308,15 @@ def add_technician(
     name,
     active=True,
 ):
-
-    worksheet = (
-        get_technician_worksheet()
-    )
-
-    active_value = (
-        "TRUE"
-        if active
-        else "FALSE"
-    )
-
+    worksheet = get_technician_worksheet()
 
     worksheet.append_row(
         [
             technician_id,
             name,
-            active_value,
+            "TRUE" if active else "FALSE",
         ],
-        value_input_option=(
-            "USER_ENTERED"
-        ),
+        value_input_option="USER_ENTERED",
     )
 
     return True
@@ -525,10 +326,7 @@ def update_technician(
     technician_id,
     data,
 ):
-
-    worksheet = (
-        get_technician_worksheet()
-    )
+    worksheet = get_technician_worksheet()
 
     return update_record(
         worksheet,
@@ -542,53 +340,33 @@ def update_technician(
 # ============================================================
 
 def get_settings():
-
-    worksheet = (
-        get_settings_worksheet()
-    )
-
-    return (
-        worksheet.get_all_records()
-    )
+    worksheet = get_settings_worksheet()
+    return worksheet.get_all_records()
 
 
-def get_setting(
-    key,
-    default="",
-):
+def get_setting(key, default=""):
+    """
+    Return one value from the Settings worksheet.
 
-    worksheet = (
-        get_settings_worksheet()
-    )
+    Expected worksheet:
 
-    records = (
-        worksheet.get_all_records()
-    )
+    key                 value
+    manager_password    example-password
+    """
 
+    worksheet = get_settings_worksheet()
+    records = worksheet.get_all_records()
+
+    wanted_key = str(key).strip()
 
     for record in records:
+        record_key = str(
+            record.get("key", "")
+        ).strip()
 
-        record_key = (
-            str(
-                record.get(
-                    "key",
-                    ""
-                )
-            )
-            .strip()
-        )
-
-        if record_key == key:
-
-            return (
-                str(
-                    record.get(
-                        "value",
-                        ""
-                    )
-                )
-                .strip()
-            )
-
+        if record_key == wanted_key:
+            return str(
+                record.get("value", "")
+            ).strip()
 
     return default
