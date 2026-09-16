@@ -1415,4 +1415,3 @@ with tab_admin:
                     ]
 
                     st.rerun()
-```
