@@ -1,91 +1,147 @@
-import gspread
 import streamlit as st
-from oauth2client.service_account import ServiceAccountCredentials
+import gspread
+from google.oauth2.service_account import Credentials
 
-# -----------------------
-# AUTH SETUP
-# -----------------------
-scope = [
-    "https://spreadsheets.google.com/feeds",
-    "https://www.googleapis.com/auth/drive"
+
+SHEET_NAME = "RD_Project_Schedule"
+WORKSHEET_NAME = "Tasks"
+
+HEADERS = [
+    "id",
+    "name",
+    "date",
+    "start",
+    "end",
+    "hours",
+    "technician",
+    "assigned_by",
+    "color"
 ]
 
-creds_dict = st.secrets["gcp_service_account"]
-creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
 
-client = gspread.authorize(creds)
+def get_client():
 
-# -----------------------
-# SHEET CONNECTION
-# -----------------------
-SHEET_ID = "1P1f1rW4l1a_hRUGZMJdhkpm7PKenbBFKvV6p5rRjXPs"
-sheet = client.open_by_key(SHEET_ID).sheet1
-
-
-# -----------------------
-# INIT HEADERS (SAFE)
-# -----------------------
-def init_sheet():
-    headers = sheet.row_values(1)
-
-    required = [
-        "id", "name", "date", "start", "end",
-        "hours", "technician", "assigned_by", "color"
+    scopes = [
+        "https://www.googleapis.com/auth/spreadsheets",
+        "https://www.googleapis.com/auth/drive"
     ]
 
-    # If empty sheet or missing headers → set them
-    if not headers or headers != required:
-        sheet.clear()
-        sheet.append_row(required)
+    credentials = Credentials.from_service_account_info(
+        dict(st.secrets["gcp_service_account"]),
+        scopes=scopes
+    )
+
+    return gspread.authorize(credentials)
 
 
-# -----------------------
-# GET ALL DATA
-# -----------------------
+def get_worksheet():
+
+    client = get_client()
+
+    spreadsheet = client.open(SHEET_NAME)
+
+    try:
+        worksheet = spreadsheet.worksheet(WORKSHEET_NAME)
+    except gspread.WorksheetNotFound:
+        worksheet = spreadsheet.add_worksheet(
+            title=WORKSHEET_NAME,
+            rows=1000,
+            cols=20
+        )
+
+    return worksheet
+
+
+def init_sheet():
+
+    worksheet = get_worksheet()
+
+    values = worksheet.get_all_values()
+
+    if not values:
+        worksheet.append_row(HEADERS)
+
+    elif values[0] != HEADERS:
+        # Keeps your sheet structure predictable
+        worksheet.update(
+            range_name="A1:I1",
+            values=[HEADERS]
+        )
+
+
 def get_all():
-    return sheet.get_all_records()
+
+    worksheet = get_worksheet()
+
+    records = worksheet.get_all_records()
+
+    return records
 
 
-# -----------------------
-# APPEND NEW TASK
-# -----------------------
 def append_row(row):
-    sheet.append_row(row)
+
+    worksheet = get_worksheet()
+
+    worksheet.append_row(
+        row,
+        value_input_option="USER_ENTERED"
+    )
 
 
-# -----------------------
-# UPDATE TASK (USED FOR DRAG & DROP)
-# -----------------------
-def update_row(task_id, updates):
-    """
-    updates example:
-    {
-        "date": "2026-06-16",
-        "start": "10:00",
-        "end": "12:00"
-    }
-    """
+def find_row_by_id(worksheet, task_id):
+
+    ids = worksheet.col_values(1)
+
+    for row_number, value in enumerate(ids, start=1):
+
+        if str(value) == str(task_id):
+            return row_number
+
+    return None
+
+
+def update_row(task_id, data):
+
+    worksheet = get_worksheet()
+
+    row_number = find_row_by_id(
+        worksheet,
+        task_id
+    )
+
+    if not row_number:
+        return False
+
+    header = worksheet.row_values(1)
+
+    for key, value in data.items():
+
+        if key not in header:
+            continue
+
+        column_number = header.index(key) + 1
+
+        worksheet.update_cell(
+            row_number,
+            column_number,
+            str(value)
+        )
+
+    return True
+
+
 def delete_row(task_id):
-    data = sheet.get_all_records()
 
-    for i, row in enumerate(data, start=2):
-        if str(row["id"]) == str(task_id):
-            sheet.delete_rows(i)
-            return True
+    worksheet = get_worksheet()
 
-    return False
-    
-    data = sheet.get_all_records()
-    headers = sheet.row_values(1)
+    row_number = find_row_by_id(
+        worksheet,
+        task_id
+    )
 
-    for i, row in enumerate(data, start=2):  # row 2 = first data row
-        if str(row["id"]) == str(task_id):
+    if not row_number:
+        return False
 
-            for key, value in updates.items():
-                if key in headers:
-                    col = headers.index(key) + 1
-                    sheet.update_cell(i, col, value)
+    worksheet.delete_rows(row_number)
 
-            return True
-
-    return False
+    return True
