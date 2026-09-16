@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime, date, timedelta
 import uuid
-import html
 
 from streamlit_calendar import calendar
 
@@ -70,268 +69,48 @@ TASK_COLUMNS = [
 
 
 # ============================================================
-# CSS
+# SIMPLE MOBILE-FRIENDLY CSS
 # ============================================================
 
 st.markdown(
     """
 <style>
 
-/* =========================================================
-   GLOBAL
-========================================================= */
-
-html, body, [class*="css"] {
-    font-size: 14px;
-}
-
+/* Main page */
 .block-container {
-    padding-top: 1rem;
+    padding-top: 1.2rem;
     padding-bottom: 3rem;
-    max-width: 1500px;
+    max-width: 1450px;
 }
 
-h1 {
-    font-size: 1.8rem !important;
-}
-
-h2 {
-    font-size: 1.4rem !important;
-}
-
-h3 {
-    font-size: 1.15rem !important;
-}
-
-
-/* =========================================================
-   HEADER
-========================================================= */
-
-.app-header {
-    background: linear-gradient(
-        135deg,
-        #0F6674,
-        #1E7E8C
-    );
-
-    padding: 20px 24px;
-    border-radius: 16px;
-    color: white;
-    margin-bottom: 18px;
-
-    box-shadow:
-        0 4px 16px
-        rgba(0,0,0,0.12);
-}
-
-.app-header h1 {
-    color: white !important;
-    margin: 0;
-    font-size: 1.8rem !important;
-}
-
-.app-header p {
-    margin: 6px 0 0 0;
-    opacity: 0.92;
-}
-
-
-/* =========================================================
-   METRICS
-========================================================= */
-
-.metric-card {
-    background: white;
-    border: 1px solid #E5E7EB;
-    border-radius: 14px;
-    padding: 16px;
-    min-height: 110px;
-
-    box-shadow:
-        0 2px 8px
-        rgba(0,0,0,0.05);
-}
-
-.metric-title {
-    font-size: 0.78rem;
-    color: #6B7280;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-}
-
-.metric-value {
-    font-size: 1.8rem;
-    font-weight: 750;
-    color: #111827;
-    margin-top: 4px;
-}
-
-.metric-subtitle {
-    font-size: 0.78rem;
-    color: #6B7280;
-    margin-top: 3px;
-}
-
-
-/* =========================================================
-   TASK CARDS
-========================================================= */
-
-.task-card {
-    background: white;
-    border: 1px solid #E5E7EB;
-    border-radius: 14px;
-    padding: 15px 17px;
-    margin-bottom: 10px;
-
-    box-shadow:
-        0 2px 7px
-        rgba(0,0,0,0.04);
-}
-
-.task-name {
-    font-size: 1rem;
-    font-weight: 700;
-    color: #111827;
-}
-
-.task-meta {
-    color: #6B7280;
-    font-size: 0.82rem;
-    margin-top: 6px;
-}
-
-
-/* =========================================================
-   BADGES
-========================================================= */
-
-.tech-badge {
-    display: inline-block;
-    background: #E6F4F6;
-    color: #0F6674;
-    padding: 4px 9px;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 650;
-    margin-top: 8px;
-    margin-right: 5px;
-}
-
-.status-badge {
-    display: inline-block;
-    background: #EEF2FF;
-    color: #3730A3;
-    padding: 4px 9px;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 650;
-    margin-top: 8px;
-    margin-right: 5px;
-}
-
-.priority-low {
-    background: #ECFDF5;
-    color: #047857;
-}
-
-.priority-medium {
-    background: #FFFBEB;
-    color: #B45309;
-}
-
-.priority-high {
-    background: #FFF7ED;
-    color: #C2410C;
-}
-
-.priority-urgent {
-    background: #FEF2F2;
-    color: #B91C1C;
-}
-
-
-/* =========================================================
-   WORKLOAD
-========================================================= */
-
-.workload-card {
-    background: white;
-    border: 1px solid #E5E7EB;
-    border-radius: 12px;
-    padding: 13px 15px;
-    margin-bottom: 8px;
-}
-
-.workload-name {
-    font-weight: 700;
-    color: #111827;
-}
-
-.workload-meta {
-    font-size: 0.82rem;
-    color: #6B7280;
-    margin-top: 4px;
-}
-
-
-/* =========================================================
-   TECHNICIAN CARDS
-========================================================= */
-
-.tech-card {
-    background: white;
-    border: 1px solid #E5E7EB;
-    border-radius: 12px;
-    padding: 13px 15px;
-    margin-bottom: 8px;
-}
-
-.tech-name {
-    font-weight: 700;
-    color: #111827;
-}
-
-.tech-active {
-    color: #047857;
-    font-size: 0.8rem;
-}
-
-.tech-inactive {
-    color: #B91C1C;
-    font-size: 0.8rem;
-}
-
-
-/* =========================================================
-   SECTION
-========================================================= */
-
-.section-title {
-    font-size: 1.15rem;
-    font-weight: 750;
-    color: #111827;
-    margin-top: 12px;
-    margin-bottom: 10px;
-}
-
-
-/* =========================================================
-   BUTTONS
-========================================================= */
-
+/* Buttons */
 .stButton > button {
     border-radius: 10px;
     min-height: 42px;
     font-weight: 600;
 }
 
+/* Form submit buttons */
+.stFormSubmitButton > button {
+    border-radius: 10px;
+    min-height: 46px;
+    font-weight: 600;
+}
 
-/* =========================================================
-   CALENDAR
-========================================================= */
+/* Metrics */
+div[data-testid="stMetric"] {
+    border: 1px solid rgba(128, 128, 128, 0.20);
+    padding: 15px;
+    border-radius: 12px;
+}
 
+/* Data editor */
+div[data-testid="stDataFrame"],
+div[data-testid="stDataEditor"] {
+    font-size: 12px;
+}
+
+/* Calendar */
 .fc {
     font-size: 12px !important;
 }
@@ -349,70 +128,34 @@ h3 {
     font-size: 1rem !important;
 }
 
-
-/* =========================================================
-   TABLE
-========================================================= */
-
-div[data-testid="stDataFrame"],
-div[data-testid="stDataEditor"] {
-    font-size: 12px !important;
-}
-
-
-/* =========================================================
-   MOBILE
-========================================================= */
-
+/* Mobile */
 @media (max-width: 768px) {
 
-    html, body, [class*="css"] {
-        font-size: 13px !important;
-    }
-
     .block-container {
-        padding:
-            0.7rem
-            0.65rem
-            2rem
-            0.65rem;
+        padding-top: 0.7rem;
+        padding-left: 0.65rem;
+        padding-right: 0.65rem;
+        padding-bottom: 2rem;
     }
 
-    .app-header {
-        padding: 15px;
-        border-radius: 12px;
+    h1 {
+        font-size: 1.45rem !important;
     }
 
-    .app-header h1 {
-        font-size: 1.3rem !important;
+    h2 {
+        font-size: 1.2rem !important;
     }
 
-    .app-header p {
-        font-size: 0.8rem;
-    }
-
-    .metric-card {
-        min-height: 90px;
-        padding: 11px;
-    }
-
-    .metric-value {
-        font-size: 1.35rem;
-    }
-
-    .metric-title {
-        font-size: 0.68rem;
-    }
-
-    .metric-subtitle {
-        font-size: 0.7rem;
-    }
-
-    .task-card {
-        padding: 13px;
+    h3 {
+        font-size: 1.05rem !important;
     }
 
     .stButton > button {
+        width: 100%;
+        min-height: 48px;
+    }
+
+    .stFormSubmitButton > button {
         width: 100%;
         min-height: 48px;
     }
@@ -451,32 +194,17 @@ try:
     init_sheet()
 
 except Exception as e:
-
-    st.error(
-        "Unable to connect to Google Sheets."
-    )
-
+    st.error("Unable to connect to Google Sheets.")
     st.exception(e)
-
     st.stop()
 
 
 # ============================================================
-# HELPERS
+# HELPER FUNCTIONS
 # ============================================================
 
-def escape(value):
-
-    if pd.isna(value):
-        return ""
-
-    return html.escape(str(value))
-
-
 def safe_date(value):
-
     try:
-
         return datetime.strptime(
             str(value).strip(),
             "%Y-%m-%d",
@@ -486,11 +214,7 @@ def safe_date(value):
         return None
 
 
-def safe_float(
-    value,
-    default=0.0,
-):
-
+def safe_float(value, default=0.0):
     try:
         return float(value)
 
@@ -498,37 +222,50 @@ def safe_float(
         return default
 
 
-def priority_class(priority):
+def safe_int(value, default=0):
+    try:
+        return int(float(value))
 
-    value = str(
-        priority
-    ).lower().strip()
-
-    if value == "low":
-        return "priority-low"
-
-    if value == "medium":
-        return "priority-medium"
-
-    if value == "high":
-        return "priority-high"
-
-    if value == "urgent":
-        return "priority-urgent"
-
-    return ""
+    except (ValueError, TypeError):
+        return default
 
 
 def is_active_value(value):
-
-    return str(
-        value
-    ).strip().lower() in [
+    return str(value).strip().lower() in [
         "true",
         "1",
         "yes",
         "active",
     ]
+
+
+def status_icon(status):
+    icons = {
+        "Pending": "🕓",
+        "In Progress": "🔄",
+        "Completed": "✅",
+        "On Hold": "⏸️",
+        "Cancelled": "❌",
+    }
+
+    return icons.get(
+        str(status),
+        "📌",
+    )
+
+
+def priority_icon(priority):
+    icons = {
+        "Low": "🟢",
+        "Medium": "🟡",
+        "High": "🟠",
+        "Urgent": "🔴",
+    }
+
+    return icons.get(
+        str(priority),
+        "⚪",
+    )
 
 
 # ============================================================
@@ -541,11 +278,7 @@ def load_tasks():
         records = get_all()
 
     except Exception as e:
-
-        st.error(
-            "Unable to load tasks."
-        )
-
+        st.error("Unable to load tasks.")
         st.exception(e)
 
         return pd.DataFrame(
@@ -554,8 +287,9 @@ def load_tasks():
 
     data = pd.DataFrame(records)
 
+    # Always create every required column.
+    # Prevents KeyError when the sheet is empty.
     for column in TASK_COLUMNS:
-
         if column not in data.columns:
             data[column] = ""
 
@@ -581,7 +315,6 @@ def load_tasks():
         ]
 
         for column in string_columns:
-
             data[column] = (
                 data[column]
                 .fillna("")
@@ -623,17 +356,11 @@ def load_tasks():
 def load_technicians():
 
     try:
-
         records = get_technicians()
-
         data = pd.DataFrame(records)
 
     except Exception as e:
-
-        st.error(
-            "Unable to load technicians."
-        )
-
+        st.error("Unable to load technicians.")
         st.exception(e)
 
         return pd.DataFrame(
@@ -651,7 +378,6 @@ def load_technicians():
     ]
 
     for column in required:
-
         if column not in data.columns:
             data[column] = ""
 
@@ -680,6 +406,10 @@ def load_technicians():
 
     return data
 
+
+# ============================================================
+# LOAD CURRENT DATA
+# ============================================================
 
 df = load_tasks()
 
@@ -791,8 +521,14 @@ in_progress_tasks = df[
 ].copy()
 
 
+completed_tasks = df[
+    df["status"]
+    == "Completed"
+].copy()
+
+
 # ============================================================
-# FIND TECHNICIAN
+# TECHNICIAN LOOKUP
 # ============================================================
 
 def get_technician_record(
@@ -848,14 +584,9 @@ def has_conflict(
             )
         ).strip()
 
-        # New tasks use technician_id.
-        # Old tasks may only contain the name.
-        same_technician = False
-
-        if (
-            technician_id
-            and row_technician_id
-        ):
+        # New records use technician ID.
+        # Old records can still be matched by name.
+        if technician_id and row_technician_id:
 
             same_technician = (
                 row_technician_id
@@ -885,10 +616,7 @@ def has_conflict(
         ):
             continue
 
-        if (
-            str(row["status"])
-            == "Cancelled"
-        ):
+        if str(row["status"]) == "Cancelled":
             continue
 
         existing_start = str(
@@ -1004,7 +732,7 @@ def save_task(
 
 
 # ============================================================
-# UPDATE SCHEDULE
+# UPDATE TASK SCHEDULE
 # ============================================================
 
 def update_task_schedule(
@@ -1109,7 +837,7 @@ def update_task_schedule(
 
 
 # ============================================================
-# CALENDAR EVENTS
+# BUILD CALENDAR EVENTS
 # ============================================================
 
 def build_events(data):
@@ -1124,21 +852,17 @@ def build_events(data):
         try:
 
             start_dt = datetime.strptime(
-                f"{row['date']} "
-                f"{row['start']}",
+                f"{row['date']} {row['start']}",
                 "%Y-%m-%d %H:%M",
             )
 
             end_dt = datetime.strptime(
-                f"{row['date']} "
-                f"{row['end']}",
+                f"{row['date']} {row['end']}",
                 "%Y-%m-%d %H:%M",
             )
 
             color = (
-                str(
-                    row["color"]
-                ).strip()
+                str(row["color"]).strip()
                 or DEFAULT_COLOR
             )
 
@@ -1146,47 +870,46 @@ def build_events(data):
                 str(row["status"])
                 == "Completed"
             ):
-
                 color = "#198754"
 
             elif (
                 str(row["status"])
                 == "On Hold"
             ):
-
                 color = "#F59E0B"
 
             elif (
                 str(row["status"])
                 == "Cancelled"
             ):
-
                 color = "#6B7280"
 
-            events.append({
+            events.append(
+                {
+                    "id": str(
+                        row["id"]
+                    ),
 
-                "id":
-                    str(row["id"]),
+                    "title": (
+                        f"{row['name']} • "
+                        f"{row['technician']}"
+                    ),
 
-                "title":
-                    f"{row['name']} • "
-                    f"{row['technician']}",
+                    "start":
+                        start_dt.isoformat(),
 
-                "start":
-                    start_dt.isoformat(),
+                    "end":
+                        end_dt.isoformat(),
 
-                "end":
-                    end_dt.isoformat(),
-
-                "color":
-                    color,
-            })
+                    "color":
+                        color,
+                }
+            )
 
         except (
             ValueError,
             TypeError,
         ):
-
             continue
 
     return events
@@ -1196,22 +919,10 @@ def build_events(data):
 # HEADER
 # ============================================================
 
-st.markdown(
-    """
-    <div class="app-header">
+st.title("🛠️ R&D Project Tracker")
 
-        <h1>
-            🛠️ R&D Project Tracker
-        </h1>
-
-        <p>
-            Sohan & Team • Schedule,
-            workload and project tracking
-        </p>
-
-    </div>
-    """,
-    unsafe_allow_html=True,
+st.caption(
+    "Sohan & Team • Schedule, workload and project tracking"
 )
 
 
@@ -1226,7 +937,7 @@ today_active = today_tasks[
             "Cancelled",
         ]
     )
-]
+].copy()
 
 
 weekly_hours = (
@@ -1239,14 +950,7 @@ weekly_hours = (
 )
 
 
-st.markdown(
-    """
-    <div class="section-title">
-        📊 Manager Overview
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
+st.subheader("📊 Manager Overview")
 
 
 m1, m2, m3, m4 = st.columns(4)
@@ -1254,106 +958,60 @@ m1, m2, m3, m4 = st.columns(4)
 
 with m1:
 
-    st.markdown(
-        f"""
-        <div class="metric-card">
-
-            <div class="metric-title">
-                TODAY
-            </div>
-
-            <div class="metric-value">
-                {len(today_active)}
-            </div>
-
-            <div class="metric-subtitle">
-                active tasks
-            </div>
-
-        </div>
-        """,
-        unsafe_allow_html=True,
+    st.metric(
+        label="📌 Today",
+        value=len(today_active),
+        help=(
+            "Active tasks "
+            "scheduled for today"
+        ),
     )
 
 
 with m2:
 
-    st.markdown(
-        f"""
-        <div class="metric-card">
-
-            <div class="metric-title">
-                IN PROGRESS
-            </div>
-
-            <div class="metric-value">
-                {len(in_progress_tasks)}
-            </div>
-
-            <div class="metric-subtitle">
-                current tasks
-            </div>
-
-        </div>
-        """,
-        unsafe_allow_html=True,
+    st.metric(
+        label="🔄 In Progress",
+        value=len(
+            in_progress_tasks
+        ),
+        help=(
+            "Tasks currently marked "
+            "as In Progress"
+        ),
     )
 
 
 with m3:
 
-    st.markdown(
-        f"""
-        <div class="metric-card">
-
-            <div class="metric-title">
-                THIS WEEK
-            </div>
-
-            <div class="metric-value">
-                {weekly_hours:.1f}h
-            </div>
-
-            <div class="metric-subtitle">
-                planned workload
-            </div>
-
-        </div>
-        """,
-        unsafe_allow_html=True,
+    st.metric(
+        label="⏱️ This Week",
+        value=f"{weekly_hours:.1f} h",
+        help=(
+            "Total planned technician "
+            "hours this week"
+        ),
     )
 
 
 with m4:
 
-    st.markdown(
-        f"""
-        <div class="metric-card">
-
-            <div class="metric-title">
-                OVERDUE
-            </div>
-
-            <div class="metric-value">
-                {len(overdue)}
-            </div>
-
-            <div class="metric-subtitle">
-                needs attention
-            </div>
-
-        </div>
-        """,
-        unsafe_allow_html=True,
+    st.metric(
+        label="⚠️ Overdue",
+        value=len(overdue),
+        help=(
+            "Past-due tasks that "
+            "are still active"
+        ),
     )
+
+
+st.divider()
 
 
 # ============================================================
 # FILTERS
 # ============================================================
-
-st.write("")
-
 
 with st.expander(
     "🔎 Filters",
@@ -1377,6 +1035,7 @@ with st.expander(
         - {""}
     )
 
+
     with f1:
 
         technician_filter = (
@@ -1390,6 +1049,7 @@ with st.expander(
             )
         )
 
+
     with f2:
 
         status_filter = (
@@ -1402,6 +1062,7 @@ with st.expander(
                 STATUSES,
             )
         )
+
 
     with f3:
 
@@ -1418,12 +1079,15 @@ with st.expander(
             )
         )
 
+
     with f4:
 
         search_text = (
             st.text_input(
                 "Search",
-                placeholder="Task name...",
+                placeholder=(
+                    "Task name..."
+                ),
             )
         )
 
@@ -1440,12 +1104,14 @@ if (
     != "All Technicians"
 ):
 
-    filtered_df = filtered_df[
+    filtered_df = (
         filtered_df[
-            "technician"
+            filtered_df[
+                "technician"
+            ]
+            == technician_filter
         ]
-        == technician_filter
-    ]
+    )
 
 
 if (
@@ -1453,12 +1119,14 @@ if (
     != "All Statuses"
 ):
 
-    filtered_df = filtered_df[
+    filtered_df = (
         filtered_df[
-            "status"
+            filtered_df[
+                "status"
+            ]
+            == status_filter
         ]
-        == status_filter
-    ]
+    )
 
 
 if not filtered_df.empty:
@@ -1475,66 +1143,76 @@ if not filtered_df.empty:
         == "Today"
     ):
 
-        filtered_df = filtered_df[
-            filtered_dates
-            == today
-        ]
+        filtered_df = (
+            filtered_df[
+                filtered_dates
+                == today
+            ]
+        )
 
     elif (
         date_filter
         == "This Week"
     ):
 
-        filtered_df = filtered_df[
-            (
-                filtered_dates
-                >= week_start
-            )
-            &
-            (
-                filtered_dates
-                <= week_end
-            )
-        ]
+        filtered_df = (
+            filtered_df[
+                (
+                    filtered_dates
+                    >= week_start
+                )
+                &
+                (
+                    filtered_dates
+                    <= week_end
+                )
+            ]
+        )
 
     elif (
         date_filter
         == "Future"
     ):
 
-        filtered_df = filtered_df[
-            filtered_dates
-            > today
-        ]
+        filtered_df = (
+            filtered_df[
+                filtered_dates
+                > today
+            ]
+        )
 
     elif (
         date_filter
         == "Past"
     ):
 
-        filtered_df = filtered_df[
-            filtered_dates
-            < today
-        ]
+        filtered_df = (
+            filtered_df[
+                filtered_dates
+                < today
+            ]
+        )
 
 
 if search_text.strip():
 
-    filtered_df = filtered_df[
+    filtered_df = (
         filtered_df[
-            "name"
+            filtered_df[
+                "name"
+            ]
+            .astype(str)
+            .str.contains(
+                search_text.strip(),
+                case=False,
+                na=False,
+            )
         ]
-        .astype(str)
-        .str.contains(
-            search_text.strip(),
-            case=False,
-            na=False,
-        )
-    ]
+    )
 
 
 # ============================================================
-# TABS
+# MAIN TABS
 # ============================================================
 
 (
@@ -1560,15 +1238,19 @@ if search_text.strip():
 
 with tab_dashboard:
 
+    # --------------------------------------------------------
+    # TODAY
+    # --------------------------------------------------------
+
     st.subheader(
         "📌 Today's Schedule"
     )
 
+
     if today_tasks.empty:
 
         st.info(
-            "No tasks are scheduled "
-            "for today."
+            "No tasks are scheduled for today."
         )
 
     else:
@@ -1583,67 +1265,110 @@ with tab_dashboard:
             )
         )
 
+
         for _, row in (
             today_sorted.iterrows()
         ):
 
-            p_class = (
-                priority_class(
-                    row["priority"]
+            with st.container(
+                border=True
+            ):
+
+                top1, top2 = (
+                    st.columns(
+                        [3, 1]
+                    )
                 )
-            )
-
-            st.markdown(
-                f"""
-                <div class="task-card">
-
-                    <div class="task-name">
-                        {escape(row["name"])}
-                    </div>
-
-                    <div class="task-meta">
-                        🕐
-                        {escape(row["start"])}
-                        –
-                        {escape(row["end"])}
-                        &nbsp; • &nbsp;
-                        ⏱️
-                        {safe_float(row["hours"]):.1f}h
-                    </div>
-
-                    <span class="tech-badge">
-                        👤
-                        {escape(row["technician"])}
-                    </span>
-
-                    <span class="status-badge">
-                        {escape(row["status"])}
-                    </span>
-
-                    <span class="
-                        status-badge
-                        {p_class}
-                    ">
-                        {escape(row["priority"])}
-                    </span>
-
-                    <div class="task-meta">
-                        📈
-                        {int(safe_float(row["progress"]))}%
-                        &nbsp; • &nbsp;
-                        Assigned by:
-                        {escape(row["assigned_by"])}
-                    </div>
-
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
 
 
-    # ========================================================
+                with top1:
+
+                    st.markdown(
+                        f"### {row['name']}"
+                    )
+
+                    st.caption(
+                        f"👤 {row['technician']}  •  "
+                        f"👨‍💼 Assigned by "
+                        f"{row['assigned_by']}"
+                    )
+
+
+                with top2:
+
+                    st.markdown(
+                        f"**{status_icon(row['status'])} "
+                        f"{row['status']}**"
+                    )
+
+                    st.caption(
+                        f"{priority_icon(row['priority'])} "
+                        f"{row['priority']} Priority"
+                    )
+
+
+                info1, info2, info3 = (
+                    st.columns(3)
+                )
+
+
+                with info1:
+
+                    st.write(
+                        f"📅 **{row['date']}**"
+                    )
+
+
+                with info2:
+
+                    st.write(
+                        f"🕐 **{row['start']} – "
+                        f"{row['end']}**"
+                    )
+
+
+                with info3:
+
+                    st.write(
+                        f"⏱️ **"
+                        f"{safe_float(row['hours']):.1f} h"
+                        f"**"
+                    )
+
+
+                progress = max(
+                    0,
+                    min(
+                        100,
+                        safe_int(
+                            row["progress"]
+                        ),
+                    ),
+                )
+
+                st.caption(
+                    f"Progress: {progress}%"
+                )
+
+                st.progress(
+                    progress
+                )
+
+
+                notes = str(
+                    row["notes"]
+                ).strip()
+
+                if notes:
+
+                    st.caption(
+                        f"📝 {notes}"
+                    )
+
+
+    # --------------------------------------------------------
     # TEAM WORKLOAD
-    # ========================================================
+    # --------------------------------------------------------
 
     st.write("")
 
@@ -1655,13 +1380,13 @@ with tab_dashboard:
     if technicians_df.empty:
 
         st.info(
-            "No technicians have "
-            "been added yet."
+            "No technicians have been added yet."
         )
 
     else:
 
         workload = []
+
 
         for _, tech_row in (
             technicians_df
@@ -1681,6 +1406,7 @@ with tab_dashboard:
                 tech_row["active"]
             )
 
+
             if this_week.empty:
 
                 technician_tasks = (
@@ -1691,15 +1417,13 @@ with tab_dashboard:
 
             else:
 
-                # New records use technician_id.
-                # Old records may only have technician name.
-
                 technician_tasks = (
                     this_week[
                         (
                             this_week[
                                 "technician_id"
-                            ].astype(str)
+                            ]
+                            .astype(str)
                             == technician_id
                         )
                         |
@@ -1725,6 +1449,7 @@ with tab_dashboard:
                     .copy()
                 )
 
+
             if not technician_tasks.empty:
 
                 technician_tasks = (
@@ -1735,6 +1460,7 @@ with tab_dashboard:
                         != "Cancelled"
                     ]
                 )
+
 
             technician_hours = (
                 pd.to_numeric(
@@ -1747,31 +1473,35 @@ with tab_dashboard:
                 .sum()
             )
 
-            workload.append({
 
-                "Technician":
-                    technician_name,
+            workload.append(
+                {
+                    "Technician":
+                        technician_name,
 
-                "Tasks":
-                    len(
-                        technician_tasks
-                    ),
-
-                "Hours":
-                    round(
-                        float(
-                            technician_hours
+                    "Tasks":
+                        len(
+                            technician_tasks
                         ),
-                        1,
-                    ),
 
-                "Active":
-                    active,
-            })
+                    "Hours":
+                        round(
+                            float(
+                                technician_hours
+                            ),
+                            1,
+                        ),
+
+                    "Active":
+                        active,
+                }
+            )
 
 
         workload_df = (
-            pd.DataFrame(workload)
+            pd.DataFrame(
+                workload
+            )
         )
 
 
@@ -1782,6 +1512,7 @@ with tab_dashboard:
             hours_value = float(
                 row["Hours"]
             )
+
 
             if not row["Active"]:
 
@@ -1832,43 +1563,69 @@ with tab_dashboard:
                 workload_icon = "🔴"
 
 
-            st.markdown(
-                f"""
-                <div class="workload-card">
+            with st.container(
+                border=True
+            ):
 
-                    <div class="workload-name">
-                        👤
-                        {escape(row["Technician"])}
-                    </div>
-
-                    <div class="workload-meta">
-
-                        📋
-                        {int(row["Tasks"])}
-                        tasks
-
-                        &nbsp; • &nbsp;
-
-                        ⏱️
-                        {hours_value:.1f}
-                        hours
-
-                        &nbsp; • &nbsp;
-
-                        {workload_icon}
-                        {workload_status}
-
-                    </div>
-
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
+                wc1, wc2, wc3 = (
+                    st.columns(
+                        [2, 1, 1]
+                    )
+                )
 
 
-    # ========================================================
-    # OVERDUE
-    # ========================================================
+                with wc1:
+
+                    st.markdown(
+                        f"**👤 "
+                        f"{row['Technician']}**"
+                    )
+
+                    st.caption(
+                        f"{workload_icon} "
+                        f"{workload_status}"
+                    )
+
+
+                with wc2:
+
+                    st.metric(
+                        "Tasks",
+                        int(
+                            row["Tasks"]
+                        ),
+                    )
+
+
+                with wc3:
+
+                    st.metric(
+                        "Hours",
+                        f"{hours_value:.1f}",
+                    )
+
+
+                # Visual workload bar
+                # 45 hours treated as full.
+                workload_percent = min(
+                    100,
+                    int(
+                        (
+                            hours_value
+                            / 45
+                        )
+                        * 100
+                    ),
+                )
+
+                st.progress(
+                    workload_percent
+                )
+
+
+    # --------------------------------------------------------
+    # NEEDS ATTENTION
+    # --------------------------------------------------------
 
     st.write("")
 
@@ -1895,16 +1652,29 @@ with tab_dashboard:
             )
         )
 
+
         for _, row in (
             overdue_sorted.iterrows()
         ):
 
-            st.error(
-                f"{row['name']} — "
-                f"{row['technician']} — "
-                f"Due {row['date']} — "
-                f"{row['status']}"
-            )
+            with st.container(
+                border=True
+            ):
+
+                st.markdown(
+                    f"**⚠️ {row['name']}**"
+                )
+
+                st.write(
+                    f"👤 {row['technician']}"
+                )
+
+                st.caption(
+                    f"Due: {row['date']} • "
+                    f"{row['start']} • "
+                    f"{row['status']} • "
+                    f"{row['priority']} Priority"
+                )
 
 
 # ============================================================
@@ -1918,8 +1688,9 @@ with tab_assign:
     )
 
     st.caption(
-        "Managers can assign one task "
-        "to one or multiple technicians."
+        "Assign a task to one or multiple technicians. "
+        "The system checks each technician's schedule "
+        "before creating the task."
     )
 
 
@@ -1942,8 +1713,7 @@ with tab_assign:
                 st.text_input(
                     "Task Name *",
                     placeholder=(
-                        "Example: "
-                        "Prototype testing"
+                        "Example: Prototype testing"
                     ),
                 )
             )
@@ -1953,6 +1723,10 @@ with tab_assign:
                 st.multiselect(
                     "Technician(s) *",
                     ACTIVE_TECH_NAMES,
+                    help=(
+                        "You can assign the same task "
+                        "to multiple technicians."
+                    ),
                 )
             )
 
@@ -2032,8 +1806,8 @@ with tab_assign:
                 st.text_area(
                     "Notes",
                     placeholder=(
-                        "Instructions, "
-                        "requirements or comments"
+                        "Instructions, requirements "
+                        "or comments"
                     ),
                     height=120,
                 )
@@ -2053,43 +1827,39 @@ with tab_assign:
 
             validation_errors = []
 
+
             if not task_name.strip():
 
                 validation_errors.append(
                     "Enter a task name."
                 )
 
+
             if not selected_tech_names:
 
                 validation_errors.append(
-                    "Select at least "
-                    "one technician."
+                    "Select at least one technician."
                 )
 
-            if (
-                not
+
+            if not (
                 selected_assigned_by
                 .strip()
             ):
 
                 validation_errors.append(
-                    "Enter who assigned "
-                    "the task."
+                    "Enter who assigned the task."
                 )
 
 
             if validation_errors:
 
-                for error in (
-                    validation_errors
-                ):
-
+                for error in validation_errors:
                     st.error(error)
 
             else:
 
                 successful = []
-
                 failed = []
 
 
@@ -2102,6 +1872,7 @@ with tab_assign:
                             technician_name
                         )
                     )
+
 
                     if tech_record is None:
 
@@ -2124,28 +1895,36 @@ with tab_assign:
                                 task_name
                                 .strip()
                             ),
+
                             technician_id=(
                                 technician_id
                             ),
+
                             technician_name=(
                                 technician_name
                             ),
+
                             task_date=(
                                 selected_date
                             ),
+
                             start_time=(
                                 selected_start
                             ),
+
                             hours=(
                                 selected_hours
                             ),
+
                             assigned_by=(
                                 selected_assigned_by
                                 .strip()
                             ),
+
                             priority=(
                                 selected_priority
                             ),
+
                             notes=(
                                 selected_notes
                                 .strip()
@@ -2171,7 +1950,7 @@ with tab_assign:
                 if successful:
 
                     st.success(
-                        "✅ Assigned to: "
+                        "✅ Task assigned to: "
                         +
                         ", ".join(
                             successful
@@ -2185,7 +1964,6 @@ with tab_assign:
                         st.error(error)
 
                 else:
-
                     st.rerun()
 
 
@@ -2200,9 +1978,8 @@ with tab_calendar:
     )
 
     st.caption(
-        "Drag tasks to reschedule them. "
-        "Technician conflicts are "
-        "checked automatically."
+        "Drag a task to another time or day to reschedule it. "
+        "Technician conflicts are checked automatically."
     )
 
 
@@ -2279,8 +2056,7 @@ with tab_calendar:
 
     if (
         calendar_result
-        and
-        isinstance(
+        and isinstance(
             calendar_result,
             dict,
         )
@@ -2307,9 +2083,11 @@ with tab_calendar:
                     ]["event"]
                 )
 
+
                 task_id = (
                     event["id"]
                 )
+
 
                 new_start = (
                     datetime
@@ -2318,12 +2096,14 @@ with tab_calendar:
                     )
                 )
 
+
                 new_end = (
                     datetime
                     .fromisoformat(
                         event["end"]
                     )
                 )
+
 
                 ok, message = (
                     update_task_schedule(
@@ -2333,10 +2113,11 @@ with tab_calendar:
                     )
                 )
 
+
                 if ok:
 
                     st.success(
-                        "Schedule updated."
+                        "Schedule updated successfully."
                     )
 
                     st.rerun()
@@ -2346,6 +2127,7 @@ with tab_calendar:
                     st.error(
                         f"❌ {message}"
                     )
+
 
             except Exception:
 
@@ -2362,16 +2144,14 @@ with tab_calendar:
 with tab_tasks:
 
     st.subheader(
-        f"📋 Task List "
-        f"({len(filtered_df)})"
+        f"📋 Task List ({len(filtered_df)})"
     )
 
 
     if filtered_df.empty:
 
         st.info(
-            "No tasks match "
-            "the selected filters."
+            "No tasks match the selected filters."
         )
 
     else:
@@ -2391,85 +2171,101 @@ with tab_tasks:
             task_list.iterrows()
         ):
 
-            p_class = (
-                priority_class(
-                    row["priority"]
-                )
-            )
+            with st.container(
+                border=True
+            ):
 
-            notes_text = escape(
-                row["notes"]
-            )
-
-            notes_html = ""
-
-            if notes_text.strip():
-
-                notes_html = (
-                    '<div class="task-meta">'
-                    '📝 '
-                    f'{notes_text}'
-                    '</div>'
+                header_col1, header_col2 = (
+                    st.columns(
+                        [3, 1]
+                    )
                 )
 
 
-            st.markdown(
-                f"""
-                <div class="task-card">
+                with header_col1:
 
-                    <div class="task-name">
-                        {escape(row["name"])}
-                    </div>
+                    st.markdown(
+                        f"### {row['name']}"
+                    )
 
-                    <div class="task-meta">
-                        📅
-                        {escape(row["date"])}
-                    </div>
+                    st.caption(
+                        f"👤 {row['technician']} • "
+                        f"Assigned by {row['assigned_by']}"
+                    )
 
-                    <div class="task-meta">
-                        🕐
-                        {escape(row["start"])}
-                        –
-                        {escape(row["end"])}
 
-                        &nbsp; • &nbsp;
+                with header_col2:
 
-                        ⏱️
-                        {safe_float(row["hours"]):.1f}h
-                    </div>
+                    st.markdown(
+                        f"**{status_icon(row['status'])} "
+                        f"{row['status']}**"
+                    )
 
-                    <span class="tech-badge">
-                        👤
-                        {escape(row["technician"])}
-                    </span>
+                    st.caption(
+                        f"{priority_icon(row['priority'])} "
+                        f"{row['priority']} Priority"
+                    )
 
-                    <span class="status-badge">
-                        {escape(row["status"])}
-                    </span>
 
-                    <span class="
-                        status-badge
-                        {p_class}
-                    ">
-                        {escape(row["priority"])}
-                    </span>
+                detail1, detail2, detail3 = (
+                    st.columns(3)
+                )
 
-                    <div class="task-meta">
-                        📈 Progress:
-                        {int(safe_float(row["progress"]))}%
-                    </div>
 
-                    <div class="task-meta">
-                        👨‍💼 Assigned by:
-                        {escape(row["assigned_by"])}
-                    </div>
+                with detail1:
 
-                    {notes_html}
+                    st.write(
+                        f"📅 **{row['date']}**"
+                    )
 
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
+
+                with detail2:
+
+                    st.write(
+                        f"🕐 **{row['start']} – "
+                        f"{row['end']}**"
+                    )
+
+
+                with detail3:
+
+                    st.write(
+                        f"⏱️ **"
+                        f"{safe_float(row['hours']):.1f} h"
+                        f"**"
+                    )
+
+
+                progress = max(
+                    0,
+                    min(
+                        100,
+                        safe_int(
+                            row["progress"]
+                        ),
+                    ),
+                )
+
+
+                st.caption(
+                    f"Progress: {progress}%"
+                )
+
+                st.progress(
+                    progress
+                )
+
+
+                notes = str(
+                    row["notes"]
+                ).strip()
+
+
+                if notes:
+
+                    st.caption(
+                        f"📝 {notes}"
+                    )
 
 
 # ============================================================
@@ -2483,13 +2279,14 @@ with tab_admin:
     )
 
 
-    admin_tech_tab, admin_task_tab = (
-        st.tabs(
-            [
-                "👥 Manage Technicians",
-                "✏️ Manage Tasks",
-            ]
-        )
+    (
+        admin_tech_tab,
+        admin_task_tab,
+    ) = st.tabs(
+        [
+            "👥 Manage Technicians",
+            "✏️ Manage Tasks",
+        ]
     )
 
 
@@ -2504,10 +2301,9 @@ with tab_admin:
         )
 
         st.caption(
-            "Add technicians here. "
-            "Inactive technicians remain "
-            "in historical tasks but cannot "
-            "receive new assignments."
+            "Add technicians or activate/deactivate them. "
+            "Inactive technicians remain in historical records "
+            "but cannot receive new tasks."
         )
 
 
@@ -2529,6 +2325,7 @@ with tab_admin:
                 )
             )
 
+
             add_tech_submit = (
                 st.form_submit_button(
                     "➕ Add Technician",
@@ -2544,6 +2341,7 @@ with tab_admin:
                 new_technician_name
                 .strip()
             )
+
 
             if not clean_name:
 
@@ -2572,8 +2370,7 @@ with tab_admin:
                 ):
 
                     st.error(
-                        "That technician "
-                        "already exists."
+                        "That technician already exists."
                     )
 
                 else:
@@ -2586,14 +2383,16 @@ with tab_admin:
                         .upper()
                     )
 
+
                     add_technician(
                         technician_id,
                         clean_name,
                         True,
                     )
 
+
                     st.success(
-                        f"{clean_name} added."
+                        f"{clean_name} added successfully."
                     )
 
                     st.rerun()
@@ -2606,19 +2405,18 @@ with tab_admin:
         # EXISTING TECHNICIANS
         # ----------------------------------------------------
 
+        st.markdown(
+            "### Existing Technicians"
+        )
+
+
         if technicians_df.empty:
 
             st.info(
-                "No technicians "
-                "have been added yet."
+                "No technicians have been added yet."
             )
 
         else:
-
-            st.write(
-                "**Existing Technicians**"
-            )
-
 
             for _, tech_row in (
                 technicians_df
@@ -2639,86 +2437,79 @@ with tab_admin:
                 )
 
 
-                c1, c2 = (
-                    st.columns(
-                        [3, 1]
-                    )
-                )
+                with st.container(
+                    border=True
+                ):
 
-
-                with c1:
-
-                    status_text = (
-                        "🟢 Active"
-                        if active
-                        else
-                        "⚪ Inactive"
-                    )
-
-                    st.markdown(
-                        f"""
-                        <div class="tech-card">
-
-                            <div class="tech-name">
-                                👤
-                                {escape(tech_name)}
-                            </div>
-
-                            <div class="task-meta">
-                                {escape(tech_id)}
-                                &nbsp; • &nbsp;
-                                {status_text}
-                            </div>
-
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
+                    tc1, tc2 = (
+                        st.columns(
+                            [3, 1]
+                        )
                     )
 
 
-                with c2:
+                    with tc1:
 
-                    if active:
+                        st.markdown(
+                            f"**👤 {tech_name}**"
+                        )
 
-                        if st.button(
-                            "Deactivate",
-                            key=(
-                                f"deactivate_"
-                                f"{tech_id}"
-                            ),
-                            use_container_width=True,
-                        ):
+                        if active:
 
-                            update_technician(
-                                tech_id,
-                                {
-                                    "active":
-                                        False
-                                },
+                            st.caption(
+                                f"🟢 Active • {tech_id}"
                             )
 
-                            st.rerun()
+                        else:
 
-                    else:
-
-                        if st.button(
-                            "Activate",
-                            key=(
-                                f"activate_"
-                                f"{tech_id}"
-                            ),
-                            use_container_width=True,
-                        ):
-
-                            update_technician(
-                                tech_id,
-                                {
-                                    "active":
-                                        True
-                                },
+                            st.caption(
+                                f"⚪ Inactive • {tech_id}"
                             )
 
-                            st.rerun()
+
+                    with tc2:
+
+                        if active:
+
+                            if st.button(
+                                "Deactivate",
+                                key=(
+                                    f"deactivate_"
+                                    f"{tech_id}"
+                                ),
+                                use_container_width=True,
+                            ):
+
+                                update_technician(
+                                    tech_id,
+                                    {
+                                        "active":
+                                            False
+                                    },
+                                )
+
+                                st.rerun()
+
+                        else:
+
+                            if st.button(
+                                "Activate",
+                                key=(
+                                    f"activate_"
+                                    f"{tech_id}"
+                                ),
+                                use_container_width=True,
+                            ):
+
+                                update_technician(
+                                    tech_id,
+                                    {
+                                        "active":
+                                            True
+                                    },
+                                )
+
+                                st.rerun()
 
 
     # ========================================================
@@ -2732,16 +2523,15 @@ with tab_admin:
         )
 
         st.caption(
-            "Update status, progress, "
-            "priority, schedule and notes."
+            "Managers can update task status, priority, "
+            "progress, schedule and notes."
         )
 
 
         if df.empty:
 
             st.info(
-                "There are currently "
-                "no tasks."
+                "There are currently no tasks."
             )
 
         else:
@@ -2878,16 +2668,15 @@ with tab_admin:
                             row["id"]
                         ).strip()
 
+
                         if not task_id:
                             continue
 
 
-                        # If technician name was changed,
-                        # update technician_id too.
-
                         selected_name = str(
                             row["technician"]
                         ).strip()
+
 
                         matching_tech = (
                             technicians_df[
@@ -2898,9 +2687,11 @@ with tab_admin:
                             ]
                         )
 
+
                         row_data = (
                             row.to_dict()
                         )
+
 
                         if not matching_tech.empty:
 
@@ -2919,24 +2710,24 @@ with tab_admin:
 
 
                     st.success(
-                        "Task changes saved."
+                        "Task changes saved successfully."
                     )
 
                     st.rerun()
 
+
                 except Exception as e:
 
                     st.error(
-                        "Unable to save "
-                        "task changes."
+                        "Unable to save task changes."
                     )
 
                     st.exception(e)
 
 
-            # =================================================
+            # ------------------------------------------------
             # DELETE TASK
-            # =================================================
+            # ------------------------------------------------
 
             st.divider()
 
@@ -2944,8 +2735,14 @@ with tab_admin:
                 "🗑️ Delete Task"
             )
 
+            st.caption(
+                "Deleting a task permanently removes "
+                "it from the tracker and Google Sheet."
+            )
+
 
             task_options = {}
+
 
             for _, row in (
                 df.iterrows()
@@ -2963,113 +2760,116 @@ with tab_admin:
                 ] = row["id"]
 
 
-            selected_label = (
-                st.selectbox(
-                    "Select task to delete",
-                    list(
-                        task_options.keys()
-                    ),
-                )
-            )
+            if task_options:
 
-
-            selected_delete_id = (
-                task_options[
-                    selected_label
-                ]
-            )
-
-
-            if st.button(
-                "🗑️ Delete Selected Task",
-                use_container_width=True,
-            ):
-
-                st.session_state[
-                    "delete_confirmation"
-                ] = (
-                    selected_delete_id
+                selected_label = (
+                    st.selectbox(
+                        "Select task to delete",
+                        list(
+                            task_options.keys()
+                        ),
+                    )
                 )
 
 
-            if (
-                "delete_confirmation"
-                in st.session_state
-            ):
-
-                confirmation_id = (
-                    st.session_state[
-                        "delete_confirmation"
+                selected_delete_id = (
+                    task_options[
+                        selected_label
                     ]
                 )
 
 
-                matching = df[
-                    df["id"]
-                    .astype(str)
-                    == str(
-                        confirmation_id
-                    )
-                ]
+                if st.button(
+                    "🗑️ Delete Selected Task",
+                    use_container_width=True,
+                ):
 
-
-                if not matching.empty:
-
-                    task_name_to_delete = (
-                        matching
-                        .iloc[0]["name"]
+                    st.session_state[
+                        "delete_confirmation"
+                    ] = (
+                        selected_delete_id
                     )
 
 
-                    st.warning(
-                        "Are you sure you "
-                        "want to permanently "
-                        f"delete "
-                        f"**{task_name_to_delete}**?"
+                if (
+                    "delete_confirmation"
+                    in st.session_state
+                ):
+
+                    confirmation_id = (
+                        st.session_state[
+                            "delete_confirmation"
+                        ]
                     )
 
 
-                    delete_col1, delete_col2 = (
-                        st.columns(2)
-                    )
+                    matching = df[
+                        df["id"]
+                        .astype(str)
+                        == str(
+                            confirmation_id
+                        )
+                    ]
 
 
-                    with delete_col1:
+                    if not matching.empty:
 
-                        if st.button(
-                            "Yes, Delete",
-                            use_container_width=True,
-                            type="primary",
-                        ):
-
-                            delete_row(
-                                confirmation_id
-                            )
-
-                            del (
-                                st.session_state[
-                                    "delete_confirmation"
-                                ]
-                            )
-
-                            st.success(
-                                "Task deleted."
-                            )
-
-                            st.rerun()
+                        task_name_to_delete = (
+                            matching
+                            .iloc[0]["name"]
+                        )
 
 
-                    with delete_col2:
+                        st.warning(
+                            "Are you sure you want to "
+                            f"permanently delete "
+                            f"**{task_name_to_delete}**?"
+                        )
 
-                        if st.button(
-                            "Cancel",
-                            use_container_width=True,
-                        ):
 
-                            del (
-                                st.session_state[
-                                    "delete_confirmation"
-                                ]
-                            )
+                        delete_col1, delete_col2 = (
+                            st.columns(2)
+                        )
 
-                            st.rerun()
+
+                        with delete_col1:
+
+                            if st.button(
+                                "Yes, Delete",
+                                use_container_width=True,
+                                type="primary",
+                            ):
+
+                                delete_row(
+                                    confirmation_id
+                                )
+
+
+                                del (
+                                    st.session_state[
+                                        "delete_confirmation"
+                                    ]
+                                )
+
+
+                                st.success(
+                                    "Task deleted successfully."
+                                )
+
+                                st.rerun()
+
+
+                        with delete_col2:
+
+                            if st.button(
+                                "Cancel",
+                                use_container_width=True,
+                            ):
+
+                                del (
+                                    st.session_state[
+                                        "delete_confirmation"
+                                    ]
+                                )
+
+                                st.rerun()
