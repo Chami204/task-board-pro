@@ -2308,7 +2308,61 @@ with tab_calendar:
         "slotDuration": "00:30:00",
         "scrollTime": "08:00:00",
     }
-
+    # ============================================================
+    # CALENDAR COMPONENT CSS
+    # ============================================================
+    
+    calendar_css = """
+    .fc {
+        font-size: 12px;
+    }
+    
+    .fc-toolbar-title {
+        font-size: 1.1rem !important;
+        font-weight: 700 !important;
+    }
+    
+    .fc-button {
+        border-radius: 6px !important;
+    }
+    
+    .fc-timegrid-slot {
+        height: 38px !important;
+    }
+    
+    .fc-timegrid-slot-label {
+        font-size: 10px !important;
+    }
+    
+    .fc-col-header-cell-cushion {
+        font-size: 11px !important;
+        font-weight: 600 !important;
+    }
+    
+    .fc-event {
+        border-radius: 5px !important;
+        padding: 2px !important;
+        cursor: pointer !important;
+    }
+    
+    .fc-event-title {
+        font-size: 10px !important;
+        font-weight: 600 !important;
+    }
+    
+    .fc-event-time {
+        font-size: 9px !important;
+        font-weight: 600 !important;
+    }
+    
+    .fc-daygrid-day-number {
+        font-size: 11px !important;
+    }
+    
+    .fc-scrollgrid {
+        border-radius: 8px !important;
+    }
+"""
 
     calendar_result = calendar(
         events=calendar_events,
