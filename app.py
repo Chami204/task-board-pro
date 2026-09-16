@@ -2289,84 +2289,38 @@ with tab_calendar:
 
 
     calendar_options = {
-
+        "initialView": "timeGridWeek",
         "editable": True,
-
         "selectable": True,
-
-        "initialView":
-            "timeGridWeek",
-
-        # Fixed height solves invisible calendar issue
-        "height": 720,
-
+        "navLinks": True,
         "nowIndicator": True,
-
         "allDaySlot": False,
-
-        "slotMinTime":
-            "06:00:00",
-
-        "slotMaxTime":
-            "22:00:00",
-
-        "slotDuration":
-            "00:30:00",
-
-        "slotLabelInterval":
-            "01:00:00",
-
-        "scrollTime":
-            "08:00:00",
-
-        "expandRows": True,
-
-        "stickyHeaderDates": True,
-
-        "dayMaxEvents": True,
-
-        "eventDisplay": "block",
-
+        "height": 700,
+    
         "headerToolbar": {
-
-            "left":
-                "prev,next today",
-
-            "center":
-                "title",
-
-            "right":
-                (
-                    "dayGridMonth,"
-                    "timeGridWeek,"
-                    "timeGridDay"
-                ),
+            "left": "today prev,next",
+            "center": "title",
+            "right": "dayGridMonth,timeGridWeek,timeGridDay",
         },
-
-        "buttonText": {
-            "today": "Today",
-            "month": "Month",
-            "week": "Week",
-            "day": "Day",
-        },
-
-        "eventTimeFormat": {
-            "hour": "2-digit",
-            "minute": "2-digit",
-            "hour12": False,
-        },
-
-        "slotLabelFormat": {
-            "hour": "2-digit",
-            "minute": "2-digit",
-            "hour12": False,
-        },
+    
+        "slotMinTime": "06:00:00",
+        "slotMaxTime": "22:00:00",
+        "slotDuration": "00:30:00",
+        "scrollTime": "08:00:00",
     }
 
 
     calendar_result = calendar(
         events=calendar_events,
         options=calendar_options,
+        custom_css=calendar_css,
+        callbacks=[
+            "eventClick",
+            "eventChange",
+            "eventDrop",
+            "eventResize",
+            "eventsSet",
+        ],
         key="project_calendar",
     )
 
