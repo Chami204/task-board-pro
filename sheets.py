@@ -43,7 +43,7 @@ TECHNICIAN_HEADERS = [
 
 
 # ============================================================
-# COLUMN LETTER HELPER
+# COLUMN LETTER
 # ============================================================
 
 def column_letter(number):
@@ -69,19 +69,17 @@ def column_letter(number):
 
 # ============================================================
 # GOOGLE CLIENT
+#
+# Cached for the Streamlit process.
+# This prevents repeated authentication.
 # ============================================================
 
+@st.cache_resource
 def get_client():
 
     scopes = [
-        (
-            "https://www.googleapis.com/"
-            "auth/spreadsheets"
-        ),
-        (
-            "https://www.googleapis.com/"
-            "auth/drive"
-        ),
+        "https://www.googleapis.com/auth/spreadsheets",
+        "https://www.googleapis.com/auth/drive",
     ]
 
 
@@ -104,9 +102,12 @@ def get_client():
 
 
 # ============================================================
-# SPREADSHEET
+# SPREADSHEET CONNECTION
+#
+# Also cached.
 # ============================================================
 
+@st.cache_resource
 def get_spreadsheet():
 
     client = get_client()
@@ -138,6 +139,7 @@ def get_or_create_worksheet(
                 worksheet_name
             )
         )
+
 
     except gspread.WorksheetNotFound:
 
@@ -196,10 +198,6 @@ def ensure_headers(
     )
 
 
-    # --------------------------------------------------------
-    # EMPTY SHEET
-    # --------------------------------------------------------
-
     if not values:
 
         end_column = (
@@ -210,10 +208,10 @@ def ensure_headers(
             )
         )
 
+
         worksheet.update(
             range_name=(
-                f"A1:"
-                f"{end_column}1"
+                f"A1:{end_column}1"
             ),
             values=[
                 required_headers
@@ -223,22 +221,17 @@ def ensure_headers(
         return
 
 
-    # --------------------------------------------------------
-    # EXISTING SHEET
-    # --------------------------------------------------------
-
     existing_headers = (
         values[0]
     )
+
 
     updated_headers = (
         existing_headers.copy()
     )
 
 
-    for header in (
-        required_headers
-    ):
+    for header in required_headers:
 
         if (
             header
@@ -263,10 +256,10 @@ def ensure_headers(
             )
         )
 
+
         worksheet.update(
             range_name=(
-                f"A1:"
-                f"{end_column}1"
+                f"A1:{end_column}1"
             ),
             values=[
                 updated_headers
@@ -284,6 +277,7 @@ def init_sheet():
         get_task_worksheet()
     )
 
+
     technician_sheet = (
         get_technician_worksheet()
     )
@@ -293,6 +287,7 @@ def init_sheet():
         task_sheet,
         TASK_HEADERS,
     )
+
 
     ensure_headers(
         technician_sheet,
@@ -310,6 +305,7 @@ def get_all():
         get_task_worksheet()
     )
 
+
     return (
         worksheet
         .get_all_records()
@@ -326,6 +322,7 @@ def append_row(row):
         get_task_worksheet()
     )
 
+
     worksheet.append_row(
         row,
         value_input_option=(
@@ -334,8 +331,11 @@ def append_row(row):
     )
 
 
+    return True
+
+
 # ============================================================
-# FIND ROW
+# FIND ROW BY ID
 # ============================================================
 
 def find_row_by_id(
@@ -420,7 +420,7 @@ def update_record(
         )
 
 
-        # Handle pandas NaN.
+        # Handle NaN
         try:
 
             if value != value:
@@ -430,7 +430,7 @@ def update_record(
             pass
 
 
-        # Convert bool cleanly.
+        # Convert bool
         if isinstance(
             value,
             bool,
@@ -443,15 +443,16 @@ def update_record(
             )
 
 
-        updates.append({
+        updates.append(
+            {
+                "range":
+                    f"{column}"
+                    f"{row_number}",
 
-            "range":
-                f"{column}"
-                f"{row_number}",
-
-            "values":
-                [[value]],
-        })
+                "values":
+                    [[value]],
+            }
+        )
 
 
     if updates:
@@ -476,6 +477,7 @@ def update_row(
     worksheet = (
         get_task_worksheet()
     )
+
 
     return update_record(
         worksheet,
