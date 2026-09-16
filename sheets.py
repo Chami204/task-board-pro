@@ -3,7 +3,7 @@ import gspread
 from google.oauth2.service_account import Credentials
 
 
-SHEET_NAME = "RD_Project_Schedule"
+SHEET_NAME = "TaskBoard"
 WORKSHEET_NAME = "Tasks"
 
 HEADERS = [
